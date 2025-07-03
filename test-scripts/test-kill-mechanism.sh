@@ -13,7 +13,7 @@ fi
 rm -f *-party.sh killmenow.md
 
 # Get current day and time for filename
-DAY=$(date +%A)
+DAY=$(date +%A | tr '[:upper:]' '[:lower:]')
 TIME=$(date +%H:%M)
 FILENAME="${DAY}-${TIME}-party.sh"
 

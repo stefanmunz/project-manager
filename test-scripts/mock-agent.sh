@@ -6,7 +6,7 @@
 TICKET=$(echo "$1" | grep -o "ticket [0-9]" | grep -o "[0-9]")
 
 # Get current day and time for filename
-DAY=$(date +%A)
+DAY=$(date +%A | tr '[:upper:]' '[:lower:]')
 TIME=$(date +%H:%M)
 FILENAME="${DAY}-${TIME}-party.sh"
 

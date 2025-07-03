@@ -282,8 +282,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.CurrentCmd = msg.cmd
 		// Record start time for this ticket
 		m.Tickets[m.CurrentTicket].StartTime = time.Now()
-		// Start monitoring for kill file
-		return m, checkForKillFile()
+		// Start monitoring for kill file and update timer
+		return m, tea.Batch(
+			checkForKillFile(),
+			// Update the view every second to show live duration
+			tea.Tick(time.Second, func(t time.Time) tea.Msg {
+				return t
+			}),
+		)
 
 	case checkKillFileMsg:
 		// Check if killmenow.md exists
@@ -364,8 +370,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.runNextAgent()
 	
 	case time.Time:
-		// Update the view to refresh the countdown
+		// Update the view to refresh the countdown or running time
 		if m.IsWaiting && time.Now().Before(m.WaitingUntil) {
+			return m, tea.Tick(time.Second, func(t time.Time) tea.Msg {
+				return t
+			})
+		} else if m.ProcessRunning && m.State == StateRunning {
+			// Continue updating while a process is running to show live duration
 			return m, tea.Tick(time.Second, func(t time.Time) tea.Msg {
 				return t
 			})
@@ -569,15 +580,26 @@ func (m Model) View() string {
 		// Show ticket status with emojis
 		for i, ticket := range m.Tickets {
 			var status string
+			var timeInfo string
+			
 			if i < m.CurrentTicket {
+				// Completed tickets - show duration
 				if ticket.Failed {
 					status = "❌"
 				} else {
 					status = "✅"
 				}
+				duration := ticket.EndTime.Sub(ticket.StartTime)
+				timeInfo = fmt.Sprintf(" - %s", formatDuration(duration))
 			} else if i == m.CurrentTicket {
+				// Current ticket
 				if m.ProcessRunning {
 					status = "🔄"
+					// Show live duration for running ticket
+					if !ticket.StartTime.IsZero() {
+						currentDuration := time.Since(ticket.StartTime)
+						timeInfo = fmt.Sprintf(" - %s", formatDuration(currentDuration))
+					}
 				} else if m.IsWaiting {
 					remainingTime := int(m.WaitingUntil.Sub(time.Now()).Seconds())
 					if remainingTime < 0 {
@@ -591,7 +613,7 @@ func (m Model) View() string {
 				status = "⏳"
 			}
 			
-			s += fmt.Sprintf("%s Ticket %d: %s\n", status, ticket.Number, ticket.Description)
+			s += fmt.Sprintf("%s Ticket %d: %s%s\n", status, ticket.Number, ticket.Description, timeInfo)
 		}
 		
 		if m.ProcessError != nil {

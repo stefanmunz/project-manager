@@ -1,9 +1,7 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -40,8 +38,6 @@ type tickMsg struct {
 	output string
 	err    error
 }
-
-type processOutputMsg string
 
 type processCompleteMsg struct{}
 
@@ -102,8 +98,6 @@ type Model struct {
 	// Execution state
 	Tickets          []Ticket
 	CurrentTicket    int
-	ProcessOutput    []string  // Changed to slice for better handling
-	OutputScrollY    int       // Scroll position for output window
 	ProcessRunning   bool
 	ProcessError     error
 	CurrentCmd       *exec.Cmd // Track running command
@@ -137,7 +131,6 @@ func initialModel() Model {
 		TextInput:          ti,
 		SelectedAgent:      0,
 		Tickets:            []Ticket{},
-		ProcessOutput:      []string{},
 		DelaySeconds:       2, // Default 2 second delay between agents
 	}
 }
@@ -184,37 +177,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 			
 		case "up", "k":
-			if m.State == StateRunning && m.OutputScrollY > 0 {
-				m.OutputScrollY--
-			} else if m.State == StateAgentSelection {
+			if m.State == StateAgentSelection {
 				m.SelectedAgent = (m.SelectedAgent - 1 + 2) % 2
 			}
 			
 		case "down", "j":
-			if m.State == StateRunning && m.OutputScrollY < len(m.ProcessOutput)-5 {
-				m.OutputScrollY++
-			} else if m.State == StateAgentSelection {
+			if m.State == StateAgentSelection {
 				m.SelectedAgent = (m.SelectedAgent + 1) % 2
-			}
-			
-		case "pgup":
-			if m.State == StateRunning {
-				m.OutputScrollY -= 10
-				if m.OutputScrollY < 0 {
-					m.OutputScrollY = 0
-				}
-			}
-			
-		case "pgdown":
-			if m.State == StateRunning {
-				m.OutputScrollY += 10
-				maxScroll := len(m.ProcessOutput) - 5
-				if m.OutputScrollY > maxScroll {
-					m.OutputScrollY = maxScroll
-				}
-				if m.OutputScrollY < 0 {
-					m.OutputScrollY = 0
-				}
 			}
 		
 		case "enter":
@@ -284,17 +253,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tickMsg:
-		// Always show what we got
-		m.ProcessOutput = append(m.ProcessOutput, fmt.Sprintf("=== TICK MSG DEBUG ==="))
-		m.ProcessOutput = append(m.ProcessOutput, fmt.Sprintf("Output length: %d", len(msg.output)))
-		m.ProcessOutput = append(m.ProcessOutput, fmt.Sprintf("Error: %v", msg.err))
-		
-		if msg.output != "" {
-			// Split output into lines and store (keep empty lines)
-			lines := strings.Split(msg.output, "\n")
-			m.ProcessOutput = append(m.ProcessOutput, "=== AGENT OUTPUT ===")
-			m.ProcessOutput = append(m.ProcessOutput, lines...)
-		}
 		if msg.err != nil {
 			m.ProcessError = msg.err
 			m.ProcessRunning = false
@@ -317,22 +275,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.DelaySeconds = 2
 		return m.Update(processCompleteMsg{})
 
-	case processOutputMsg:
-		// Add new output line
-		m.ProcessOutput = append(m.ProcessOutput, string(msg))
-		// Auto-scroll to bottom if near the end
-		if m.OutputScrollY >= len(m.ProcessOutput)-10 {
-			m.OutputScrollY = len(m.ProcessOutput) - 5
-			if m.OutputScrollY < 0 {
-				m.OutputScrollY = 0
-			}
-		}
-		return m, nil
-
 	case processStartedMsg:
 		// Store the running command
 		m.CurrentCmd = msg.cmd
-		m.ProcessOutput = append(m.ProcessOutput, fmt.Sprintf("Process started with PID: %d", msg.cmd.Process.Pid))
 		// Start monitoring for kill file
 		return m, checkForKillFile()
 
@@ -348,11 +293,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		})
 
 	case killFileFoundMsg:
-		m.ProcessOutput = append(m.ProcessOutput, fmt.Sprintf("Kill file found with content: %s", msg.content))
-		
 		// Kill the process
 		if m.CurrentCmd != nil && m.CurrentCmd.Process != nil {
-			m.ProcessOutput = append(m.ProcessOutput, "Terminating agent process...")
 			m.CurrentCmd.Process.Kill()
 			m.CurrentCmd = nil
 		}
@@ -409,9 +351,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Waiting period is over, start next agent
 		m.IsWaiting = false
 		
-		// Clear output and error state for next agent
-		m.ProcessOutput = []string{}
-		m.OutputScrollY = 0
+		// Clear error state for next agent
 		m.ProcessError = nil
 		m.ProcessRunning = true
 		return m, m.runNextAgent()
@@ -448,7 +388,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.State == StateFileCheckResults {
 			tickets, err := parseTickets(m.TicketsPath)
 			if err != nil {
-				m.ProcessOutput = append(m.ProcessOutput, fmt.Sprintf("Error reading tickets: %v", err))
+				// Handle error silently or set an error state if needed
 			} else {
 				m.Tickets = tickets
 			}
@@ -507,67 +447,31 @@ func parseTickets(path string) ([]Ticket, error) {
 
 func (m Model) runNextAgent() tea.Cmd {
 	return func() tea.Msg {
-		// Debug output
-		debugOutput := fmt.Sprintf("Starting agent for ticket %d\n", m.CurrentTicket+1)
-		debugOutput += fmt.Sprintf("Command: %s\n", m.CustomAgentCommand)
-		
 		standardPrompt, err := ioutil.ReadFile(m.StandardPromptPath)
 		if err != nil {
-			return tickMsg{output: debugOutput + fmt.Sprintf("Error reading prompt: %v", err), err: err}
+			return tickMsg{output: "", err: err}
 		}
 		
 		// Add kill file instruction to the prompt
 		prompt := fmt.Sprintf("%s Please use the documentation in the input folder, especially the specification.md and the tickets.md. Please work on ticket %d. As your final task, create a file named 'killmenow.md' containing either 'success' or 'failure' to indicate whether you successfully completed the task.",
 			string(standardPrompt), m.CurrentTicket+1)
 		
-		debugOutput += fmt.Sprintf("Prompt length: %d\n", len(prompt))
-		
 		cmdParts := strings.Fields(m.CustomAgentCommand)
 		if len(cmdParts) == 0 {
-			return tickMsg{output: debugOutput + "Error: invalid command", err: fmt.Errorf("invalid command")}
+			return tickMsg{output: "", err: fmt.Errorf("invalid command")}
 		}
 		
 		// Append prompt as a command-line argument
 		args := append(cmdParts[1:], prompt)
 		cmd := exec.Command(cmdParts[0], args...)
 		
-		// Set up pipes for output
-		stdout, err := cmd.StdoutPipe()
-		if err != nil {
-			return tickMsg{output: debugOutput + fmt.Sprintf("Error creating stdout pipe: %v", err), err: err}
-		}
-		
-		stderr, err := cmd.StderrPipe()
-		if err != nil {
-			return tickMsg{output: debugOutput + fmt.Sprintf("Error creating stderr pipe: %v", err), err: err}
-		}
-		
-		debugOutput += fmt.Sprintf("Executing: %s with %d args\n", cmdParts[0], len(args))
-		debugOutput += "--- COMMAND OUTPUT ---\n"
-		
 		// Start the command asynchronously
 		if err := cmd.Start(); err != nil {
-			return tickMsg{output: debugOutput + fmt.Sprintf("Error starting command: %v", err), err: err}
+			return tickMsg{output: "", err: err}
 		}
-		
-		// Start goroutines to read output
-		go streamOutput(stdout, "STDOUT")
-		go streamOutput(stderr, "STDERR")
 		
 		// Return a message indicating the process has started
 		return processStartedMsg{cmd: cmd}
-	}
-}
-
-func streamOutput(pipe io.ReadCloser, prefix string) {
-	defer pipe.Close()
-	scanner := bufio.NewScanner(pipe)
-	for scanner.Scan() {
-		// In a real implementation, we'd send these lines to the update loop
-		// For now, we'll just print them
-		line := scanner.Text()
-		_ = line // Suppress unused variable warning
-		// TODO: Send processOutputMsg through a channel
 	}
 }
 
@@ -660,36 +564,8 @@ func (m Model) View() string {
 			s += fmt.Sprintf("%s Ticket %d: %s\n", status, ticket.Number, ticket.Description)
 		}
 		
-		// Show output window with border
-		s += "\n" + strings.Repeat("─", 60) + "\n"
-		s += "Output (↑/↓ to scroll, PgUp/PgDn for fast scroll):\n"
-		s += strings.Repeat("─", 60) + "\n"
-		
-		// Show output with scrolling
-		visibleLines := 15
-		if len(m.ProcessOutput) > 0 {
-			start := m.OutputScrollY
-			end := start + visibleLines
-			if end > len(m.ProcessOutput) {
-				end = len(m.ProcessOutput)
-			}
-			if start < 0 {
-				start = 0
-			}
-			
-			for i := start; i < end; i++ {
-				s += m.ProcessOutput[i] + "\n"
-			}
-		}
-		
-		s += strings.Repeat("─", 60) + "\n"
-		
 		if m.ProcessError != nil {
-			s += errorStyle.Render(fmt.Sprintf("Error: %v", m.ProcessError)) + "\n"
-		}
-		
-		if m.CurrentCmd != nil && m.CurrentCmd.Process != nil {
-			s += infoStyle.Render(fmt.Sprintf("Process PID: %d", m.CurrentCmd.Process.Pid)) + "\n"
+			s += "\n" + errorStyle.Render(fmt.Sprintf("Error: %v", m.ProcessError)) + "\n"
 		}
 		
 	case StateCompleted:

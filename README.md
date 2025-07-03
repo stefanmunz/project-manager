@@ -8,7 +8,7 @@ A terminal user interface for managing sequential coding agent execution using B
 - Interactive file picker for missing files
 - Agent selection (claude or custom command)
 - Sequential ticket execution with configurable delays
-- Real-time progress tracking with output window
+- Real-time progress tracking with status indicators
 - Exponential backoff for API errors
 - Visual countdown between agent executions
 - Kill file mechanism for non-terminating agents

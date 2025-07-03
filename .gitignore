@@ -1,0 +1,17 @@
+# Binary
+project-manager
+
+# Test output files
+example-output.sh
+killmenow.md
+
+# IDE and system files
+.DS_Store
+.vscode/
+.idea/
+
+# Go build artifacts
+*.exe
+*.dll
+*.so
+*.dylib

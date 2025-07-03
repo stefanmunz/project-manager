@@ -16,10 +16,10 @@ rm -f party.sh killmenow.md
 echo "Testing single agent with kill file..."
 
 # Read the standard prompt
-PROMPT_CONTENT=$(cat specifications/standard-prompt.md)
+PROMPT_CONTENT=$(cat input/standard-prompt.md)
 
 # Create the full prompt with kill file instruction
-FULL_PROMPT="$PROMPT_CONTENT Please use the documentation in the specifications folder, especially the specification.md and the tickets.md. Please work on ticket 1. As your final task, create a file named 'killmenow.md' containing either 'success' or 'failure' to indicate whether you successfully completed the task."
+FULL_PROMPT="$PROMPT_CONTENT Please use the documentation in the input folder, especially the specification.md and the tickets.md. Please work on ticket 1. As your final task, create a file named 'killmenow.md' containing either 'success' or 'failure' to indicate whether you successfully completed the task."
 
 echo "Executing mock agent..."
 ./test-scripts/mock-agent.sh "$FULL_PROMPT" &

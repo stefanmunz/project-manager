@@ -13,7 +13,7 @@ Please follow these guidelines:
 5. Make sure to append to the existing party.sh file (don't overwrite!)
 6. The party should get progressively more exciting with each agent's contribution
 
-Remember: This is a celebration! Have fun with it! 🎊 Please use the documentation in the specifications folder, especially the specification.md and the tickets.md. Please work on ticket 2. As your final task, create a file named 'killmenow.md' containing either 'success' or 'failure' to indicate whether you successfully completed the task."
+Remember: This is a celebration! Have fun with it! 🎊 Please use the documentation in the input folder, especially the specification.md and the tickets.md. Please work on ticket 2. As your final task, create a file named 'killmenow.md' containing either 'success' or 'failure' to indicate whether you successfully completed the task."
 
 echo "Extracting ticket number from prompt..."
 TICKET=$(echo "$PROMPT" | grep -o "ticket [0-9]" | grep -o "[0-9]")

@@ -29,7 +29,7 @@ go run .
 ```
 
 The application will:
-1. Check for required files in the `specifications/` folder
+1. Check for required files in the `input/` folder
 2. If files are missing, let you select them using a file picker
 3. Ask you to choose the coding agent
 4. Show a confirmation screen
@@ -37,9 +37,9 @@ The application will:
 
 ## File Structure
 
-- `specifications/specification.md` - Project specification
-- `specifications/tickets.md` - Individual tickets for agents
-- `specifications/standard-prompt.md` - Base prompt for all agents
+- `input/specification.md` - Project specification
+- `input/tickets.md` - Individual tickets for agents
+- `input/standard-prompt.md` - Base prompt for all agents
 
 ## Controls
 

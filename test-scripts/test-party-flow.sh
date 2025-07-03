@@ -13,13 +13,13 @@ fi
 rm -f party.sh
 
 # Read the standard prompt
-PROMPT_CONTENT=$(cat specifications/standard-prompt.md)
+PROMPT_CONTENT=$(cat input/standard-prompt.md)
 
 # Test each agent in sequence
 for i in 1 2 3; do
     echo ""
     echo "📢 Launching Agent $i..."
-    FULL_PROMPT="$PROMPT_CONTENT Please use the documentation in the specifications folder, especially the specification.md and the tickets.md. Please work on ticket $i"
+    FULL_PROMPT="$PROMPT_CONTENT Please use the documentation in the input folder, especially the specification.md and the tickets.md. Please work on ticket $i"
     
     # Call mock agent with the prompt as an argument
     ./test-scripts/mock-agent.sh "$FULL_PROMPT"

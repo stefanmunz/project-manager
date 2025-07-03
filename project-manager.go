@@ -130,9 +130,9 @@ func initialModel() Model {
 	
 	return Model{
 		State:              StateFileCheck,
-		SpecificationPath:  "specifications/specification.md",
-		TicketsPath:        "specifications/tickets.md",
-		StandardPromptPath: "specifications/standard-prompt.md",
+		SpecificationPath:  "input/specification.md",
+		TicketsPath:        "input/tickets.md",
+		StandardPromptPath: "input/standard-prompt.md",
 		MissingFiles:       []string{},
 		TextInput:          ti,
 		SelectedAgent:      0,
@@ -517,7 +517,7 @@ func (m Model) runNextAgent() tea.Cmd {
 		}
 		
 		// Add kill file instruction to the prompt
-		prompt := fmt.Sprintf("%s Please use the documentation in the specifications folder, especially the specification.md and the tickets.md. Please work on ticket %d. As your final task, create a file named 'killmenow.md' containing either 'success' or 'failure' to indicate whether you successfully completed the task.",
+		prompt := fmt.Sprintf("%s Please use the documentation in the input folder, especially the specification.md and the tickets.md. Please work on ticket %d. As your final task, create a file named 'killmenow.md' containing either 'success' or 'failure' to indicate whether you successfully completed the task.",
 			string(standardPrompt), m.CurrentTicket+1)
 		
 		debugOutput += fmt.Sprintf("Prompt length: %d\n", len(prompt))

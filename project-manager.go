@@ -57,10 +57,20 @@ type processStartedMsg struct {
 	cmd *exec.Cmd
 }
 
+type fileCheckResult struct {
+	SpecificationFound   bool
+	TicketsFound        bool
+	StandardPromptFound bool
+	MissingFiles        []string
+}
+
+type proceedToAgentSelectionMsg struct{}
+
 type AppState int
 
 const (
 	StateFileCheck AppState = iota
+	StateFileCheckResults
 	StateFilePicker
 	StateAgentSelection
 	StateConfirmation
@@ -137,19 +147,29 @@ func (m Model) Init() tea.Cmd {
 
 func checkFiles() tea.Msg {
 	m := initialModel()
-	missing := []string{}
+	result := fileCheckResult{
+		MissingFiles: []string{},
+	}
 	
 	if _, err := os.Stat(m.SpecificationPath); os.IsNotExist(err) {
-		missing = append(missing, "specification.md")
-	}
-	if _, err := os.Stat(m.TicketsPath); os.IsNotExist(err) {
-		missing = append(missing, "tickets.md")
-	}
-	if _, err := os.Stat(m.StandardPromptPath); os.IsNotExist(err) {
-		missing = append(missing, "standard-prompt.md")
+		result.MissingFiles = append(result.MissingFiles, "specification.md")
+	} else {
+		result.SpecificationFound = true
 	}
 	
-	return missing
+	if _, err := os.Stat(m.TicketsPath); os.IsNotExist(err) {
+		result.MissingFiles = append(result.MissingFiles, "tickets.md")
+	} else {
+		result.TicketsFound = true
+	}
+	
+	if _, err := os.Stat(m.StandardPromptPath); os.IsNotExist(err) {
+		result.MissingFiles = append(result.MissingFiles, "standard-prompt.md")
+	} else {
+		result.StandardPromptFound = true
+	}
+	
+	return result
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -222,6 +242,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			
 			return m, cmd
+		}
+		
+		// Handle any key press in StateFileCheckResults
+		if m.State == StateFileCheckResults {
+			// Any key press moves to agent selection
+			return m.Update(proceedToAgentSelectionMsg{})
 		}
 		
 		// Handle file picker navigation
@@ -394,20 +420,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
-	case []string:
+	case fileCheckResult:
 		// File check results
-		if len(msg) == 0 {
-			// All files found
-			tickets, err := parseTickets(m.TicketsPath)
-			if err != nil {
-				m.MissingFiles = append(m.MissingFiles, "tickets.md (error reading)")
-			} else {
-				m.Tickets = tickets
-			}
-			m.State = StateAgentSelection
+		if len(msg.MissingFiles) == 0 {
+			// All files found - show results and wait for user input
+			m.State = StateFileCheckResults
+			return m, nil
 		} else {
 			// Some files missing
-			m.MissingFiles = msg
+			m.MissingFiles = msg.MissingFiles
 			m.State = StateFilePicker
 			m.CurrentMissingIndex = 0
 			
@@ -416,6 +437,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.FilePicker = fp
 			return m, m.FilePicker.Init()
 		}
+	
+	case proceedToAgentSelectionMsg:
+		// Transition from file check results to agent selection
+		if m.State == StateFileCheckResults {
+			tickets, err := parseTickets(m.TicketsPath)
+			if err != nil {
+				m.ProcessOutput = append(m.ProcessOutput, fmt.Sprintf("Error reading tickets: %v", err))
+			} else {
+				m.Tickets = tickets
+			}
+			m.State = StateAgentSelection
+		}
+		return m, nil
 
 	case tea.WindowSizeMsg:
 		m.Width = msg.Width
@@ -544,6 +578,13 @@ func (m Model) View() string {
 	switch m.State {
 	case StateFileCheck:
 		s += "Checking for required files...\n"
+		
+	case StateFileCheckResults:
+		s += "Checking for required files...\n\n"
+		s += successStyle.Render("✅ Successfully found specification.md") + "\n"
+		s += successStyle.Render("✅ Successfully found tickets.md") + "\n"
+		s += successStyle.Render("✅ Successfully found generic prompt.md") + "\n\n"
+		s += infoStyle.Render("All files found! Press any key to continue...")
 		
 	case StateFilePicker:
 		s += fmt.Sprintf("Missing file: %s\n", errorStyle.Render(m.MissingFiles[m.CurrentMissingIndex]))

@@ -6,7 +6,8 @@
       "Bash(mkdir:*)",
       "Bash(chmod:*)",
       "Bash(rm:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(go build:*)"
     ],
     "deny": []
   }

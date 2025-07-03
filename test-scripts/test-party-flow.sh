@@ -4,6 +4,11 @@
 echo "🎊 Testing Party Manager Flow 🎊"
 echo "==============================="
 
+# Change to parent directory if we're in test-scripts
+if [[ $PWD == */test-scripts ]]; then
+    cd ..
+fi
+
 # Clean up
 rm -f party.sh
 
@@ -17,7 +22,7 @@ for i in 1 2 3; do
     FULL_PROMPT="$PROMPT_CONTENT Please use the documentation in the specifications folder, especially the specification.md and the tickets.md. Please work on ticket $i"
     
     # Call mock agent with the prompt as an argument
-    ./mock-agent.sh "$FULL_PROMPT"
+    ./test-scripts/mock-agent.sh "$FULL_PROMPT"
     
     # Small delay between agents
     sleep 1

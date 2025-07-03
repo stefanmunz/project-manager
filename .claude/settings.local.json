@@ -4,7 +4,9 @@
       "WebFetch(domain:github.com)",
       "Bash(go mod init:*)",
       "Bash(mkdir:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(rm:*)",
+      "Bash(git add:*)"
     ],
     "deny": []
   }

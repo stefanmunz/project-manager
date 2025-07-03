@@ -4,6 +4,13 @@ project-manager
 # Test output files
 example-output.sh
 killmenow.md
+party.sh
+stefan.md
+
+# Test logs
+*.log
+agent-execution.log
+debug-agent.log
 
 # IDE and system files
 .DS_Store

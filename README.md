@@ -106,22 +106,33 @@ cat agent-execution.log
 
 You should see timestamps at least 2 seconds apart between agent completions and the next agent starting.
 
-### Debugging Agents
+### Testing
 
-Several test agents are included for debugging:
+The project includes a comprehensive test suite in the `test-scripts/` directory:
 
-1. **Debug Agent** (`./debug-agent.sh`): Shows exactly what arguments are received
-2. **Stdin Test** (`./stdin-test.sh`): Tests reading prompt from stdin
-3. **Echo Test** (`./test-echo.sh`): Simple success test
-4. **Timestamp Agent** (`./timestamp-agent.sh`): Logs execution times
-5. **Failing Agent** (`./failing-agent.sh`): Simulates API errors
+- **Mock Agents**: Simulate different agent behaviors (success, failure, debug)
+- **Test Scripts**: Automated tests for various features
+- **Kill File Testing**: Verify the agent termination mechanism
+
+Available test agents:
+1. **Debug Agent** (`test-scripts/debug-agent.sh`): Shows exactly what arguments are received
+2. **Stdin Test** (`test-scripts/stdin-test.sh`): Tests reading prompt from stdin
+3. **Failing Agent** (`test-scripts/failing-agent.sh`): Simulates API errors
+4. **Mock Agent** (`test-scripts/mock-agent.sh`): Full-featured mock agent with kill file support
+
+Run tests with:
+```bash
+./test-scripts/test-kill-mechanism.sh
+./test-scripts/test-party-flow.sh
+```
 
 ### Testing Error Handling
 
 Use the failing agent to test error handling and exponential backoff:
 
 ```bash
-./failing-agent.sh
+./project-manager
+# Select "Other" and enter: ./test-scripts/failing-agent.sh
 ```
 
 This script simulates API overload errors. You should see:

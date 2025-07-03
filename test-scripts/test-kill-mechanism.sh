@@ -4,6 +4,11 @@
 echo "🔧 Testing Kill File Mechanism"
 echo "=============================="
 
+# Change to parent directory if we're in test-scripts
+if [[ $PWD == */test-scripts ]]; then
+    cd ..
+fi
+
 # Clean up any existing files
 rm -f party.sh killmenow.md
 
@@ -17,7 +22,7 @@ PROMPT_CONTENT=$(cat specifications/standard-prompt.md)
 FULL_PROMPT="$PROMPT_CONTENT Please use the documentation in the specifications folder, especially the specification.md and the tickets.md. Please work on ticket 1. As your final task, create a file named 'killmenow.md' containing either 'success' or 'failure' to indicate whether you successfully completed the task."
 
 echo "Executing mock agent..."
-./mock-agent.sh "$FULL_PROMPT" &
+./test-scripts/mock-agent.sh "$FULL_PROMPT" &
 AGENT_PID=$!
 
 echo "Agent started with PID: $AGENT_PID"

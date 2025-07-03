@@ -73,6 +73,7 @@ const (
 	StateFileCheckResults
 	StateFilePicker
 	StateAgentSelection
+	StateCustomCommandEntry
 	StateConfirmation
 	StateRunning
 	StateCompleted
@@ -223,7 +224,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.CustomAgentCommand = "claude --dangerously-skip-permissions"
 					m.State = StateConfirmation
 				} else {
+					// Move to custom command entry state
+					m.State = StateCustomCommandEntry
+					m.TextInput.SetValue("") // Clear any previous value
 					m.TextInput.Focus()
+					return m, m.TextInput.Focus()
+				}
+			
+			case StateCustomCommandEntry:
+				if m.TextInput.Value() != "" {
+					m.CustomAgentCommand = m.TextInput.Value()
+					m.State = StateConfirmation
 				}
 			
 			case StateConfirmation:
@@ -231,16 +242,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		
-		// Handle text input in agent selection
-		if m.State == StateAgentSelection && m.SelectedAgent == 1 {
+		// Handle text input in custom command entry
+		if m.State == StateCustomCommandEntry {
 			var cmd tea.Cmd
 			m.TextInput, cmd = m.TextInput.Update(msg)
-			
-			if msg.String() == "enter" && m.TextInput.Value() != "" {
-				m.CustomAgentCommand = m.TextInput.Value()
-				m.State = StateConfirmation
-			}
-			
 			return m, cmd
 		}
 		
@@ -596,7 +601,7 @@ func (m Model) View() string {
 		
 		choices := []string{
 			"claude --dangerously-skip-permissions",
-			"Other (custom command)",
+			"Other (enter custom command)",
 		}
 		
 		for i, choice := range choices {
@@ -607,11 +612,12 @@ func (m Model) View() string {
 			}
 		}
 		
-		if m.SelectedAgent == 1 {
-			s += "\n" + m.TextInput.View()
-		}
-		
 		s += "\n" + infoStyle.Render("Press Enter to continue")
+		
+	case StateCustomCommandEntry:
+		s += "Enter custom agent command:\n\n"
+		s += m.TextInput.View() + "\n\n"
+		s += infoStyle.Render("Press Enter when done")
 		
 	case StateConfirmation:
 		s += "Ready to start execution:\n\n"

@@ -115,6 +115,8 @@ type Ticket struct {
 	Description string
 	Completed   bool
 	Failed      bool
+	StartTime   time.Time
+	EndTime     time.Time
 }
 
 func initialModel() Model {
@@ -278,6 +280,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case processStartedMsg:
 		// Store the running command
 		m.CurrentCmd = msg.cmd
+		// Record start time for this ticket
+		m.Tickets[m.CurrentTicket].StartTime = time.Now()
 		// Start monitoring for kill file
 		return m, checkForKillFile()
 
@@ -314,6 +318,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case processCompleteMsg:
 		m.ProcessRunning = false
+		
+		// Record end time for this ticket
+		m.Tickets[m.CurrentTicket].EndTime = time.Now()
 		
 		// Mark ticket as completed or failed based on error state
 		if m.ProcessError != nil {
@@ -481,6 +488,29 @@ func checkForKillFile() tea.Cmd {
 	}
 }
 
+func formatDuration(d time.Duration) string {
+	hours := int(d.Hours())
+	minutes := int(d.Minutes()) % 60
+	seconds := int(d.Seconds()) % 60
+	
+	if hours > 0 {
+		return fmt.Sprintf("%d hour%s, %d minute%s, %d second%s", 
+			hours, plural(hours), minutes, plural(minutes), seconds, plural(seconds))
+	} else if minutes > 0 {
+		return fmt.Sprintf("%d minute%s, %d second%s", 
+			minutes, plural(minutes), seconds, plural(seconds))
+	} else {
+		return fmt.Sprintf("%d second%s", seconds, plural(seconds))
+	}
+}
+
+func plural(n int) string {
+	if n == 1 {
+		return ""
+	}
+	return "s"
+}
+
 func (m Model) View() string {
 	s := titleStyle.Render("Project Manager") + "\n\n"
 	
@@ -571,20 +601,33 @@ func (m Model) View() string {
 	case StateCompleted:
 		s += successStyle.Render("All agents completed!") + "\n\n"
 		
-		// Show final status
+		// Show detailed ticket results with timing
+		var totalDuration time.Duration
 		successful := 0
 		failed := 0
+		
 		for _, ticket := range m.Tickets {
+			duration := ticket.EndTime.Sub(ticket.StartTime)
+			totalDuration += duration
+			
+			status := "✅"
 			if ticket.Failed {
+				status = "❌"
 				failed++
 			} else {
 				successful++
 			}
+			
+			s += fmt.Sprintf("%s Ticket %d: %s - %s\n", 
+				status, ticket.Number, ticket.Description, formatDuration(duration))
 		}
 		
+		// Show summary
+		s += fmt.Sprintf("\nSummary:\n")
 		s += fmt.Sprintf("✅ Successful: %d\n", successful)
 		s += fmt.Sprintf("❌ Failed: %d\n", failed)
 		s += fmt.Sprintf("📊 Total: %d\n", len(m.Tickets))
+		s += fmt.Sprintf("⏱️  Total time: %s\n", formatDuration(totalDuration))
 		
 		s += "\n" + infoStyle.Render("Press q to quit")
 	}

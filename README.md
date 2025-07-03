@@ -11,6 +11,7 @@ A terminal user interface for managing sequential coding agent execution using B
 - Real-time progress tracking with output window
 - Exponential backoff for API errors
 - Visual countdown between agent executions
+- Kill file mechanism for non-terminating agents
 
 ## Installation
 
@@ -140,3 +141,14 @@ This script simulates API overload errors. You should see:
 - Delay increases after each failure (2s → 4s → 8s → 16s → 30s max)
 - All tickets are attempted despite failures
 - Visual countdown between retries
+
+## Kill File Mechanism
+
+The project manager handles non-terminating agents (like Claude) using a "kill file" mechanism:
+
+1. **Agent prompts include**: "As your final task, create a file named 'killmenow.md' containing either 'success' or 'failure'"
+2. **Async execution**: Agents run asynchronously while the manager monitors for the kill file
+3. **Auto-termination**: When `killmenow.md` is detected, the agent process is killed and the file is deleted
+4. **Status tracking**: Tickets are marked as completed/failed based on the file content
+
+This ensures agents that don't auto-exit can still be managed effectively.

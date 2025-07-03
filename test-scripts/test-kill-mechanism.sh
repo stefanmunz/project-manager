@@ -10,10 +10,16 @@ if [[ $PWD == */test-scripts ]]; then
 fi
 
 # Clean up any existing files
-rm -f party.sh killmenow.md
+rm -f *-party.sh killmenow.md
+
+# Get current day and time for filename
+DAY=$(date +%A)
+TIME=$(date +%H:%M)
+FILENAME="${DAY}-${TIME}-party.sh"
 
 # Test a single agent execution
 echo "Testing single agent with kill file..."
+echo "Expected filename: $FILENAME"
 
 # Read the standard prompt
 PROMPT_CONTENT=$(cat input/standard-prompt.md)
@@ -53,9 +59,13 @@ rm -f killmenow.md
 echo ""
 echo "✅ Test completed successfully!"
 
-# Check if party.sh was created
-if [ -f party.sh ]; then
+# Check if party script was created with timestamp
+if [ -f "$FILENAME" ]; then
     echo ""
-    echo "Party script created. Contents:"
-    cat party.sh
+    echo "Party script created: $FILENAME"
+    echo "Contents:"
+    cat "$FILENAME"
+else
+    echo ""
+    echo "❌ Error: $FILENAME was not created!"
 fi

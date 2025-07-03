@@ -9,8 +9,15 @@ if [[ $PWD == */test-scripts ]]; then
     cd ..
 fi
 
-# Clean up
-rm -f party.sh
+# Clean up old party files
+rm -f *-party.sh
+
+# Get current day and time for filename
+DAY=$(date +%A)
+TIME=$(date +%H:%M)
+FILENAME="${DAY}-${TIME}-party.sh"
+
+echo "Creating party script: $FILENAME"
 
 # Read the standard prompt
 PROMPT_CONTENT=$(cat input/standard-prompt.md)
@@ -32,10 +39,10 @@ echo ""
 echo "🎭 Party planning complete! Let's see the party:"
 echo "================================================"
 
-if [ -f party.sh ]; then
-    echo "Running party.sh..."
+if [ -f "$FILENAME" ]; then
+    echo "Running $FILENAME..."
     echo ""
-    ./party.sh
+    ./"$FILENAME"
 else
-    echo "❌ Error: party.sh was not created!"
+    echo "❌ Error: $FILENAME was not created!"
 fi

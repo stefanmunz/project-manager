@@ -588,7 +588,7 @@ func (m Model) View() string {
 		s += "Checking for required files...\n\n"
 		s += successStyle.Render("✅ Successfully found specification.md") + "\n"
 		s += successStyle.Render("✅ Successfully found tickets.md") + "\n"
-		s += successStyle.Render("✅ Successfully found generic prompt.md") + "\n\n"
+		s += successStyle.Render("✅ Successfully found standard-prompt.md") + "\n\n"
 		s += infoStyle.Render("All files found! Press any key to continue...")
 		
 	case StateFilePicker:

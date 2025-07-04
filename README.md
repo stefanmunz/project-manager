@@ -1,7 +1,7 @@
 # Project Manager TUI
 
-[![CI](https://github.com/stefan/project-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/stefan/project-manager/actions/workflows/ci.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/stefan/project-manager)](https://goreportcard.com/report/github.com/stefan/project-manager)
+[![CI](https://github.com/stefanmunz/project-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/stefanmunz/project-manager/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/stefanmunz/project-manager)](https://goreportcard.com/report/github.com/stefanmunz/project-manager)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 This is project-manager, a small terminal user interface (TUI) application for managing sequential execution of coding agents, built with [Bubble Tea](https://github.com/charmbracelet/bubbletea). This tool streamlines the process of running multiple AI agents against a codebase, with automatic file detection, visual progress tracking, and intelligent error handling.
@@ -22,7 +22,7 @@ This is project-manager, a small terminal user interface (TUI) application for m
 ### Using Go Install (Recommended)
 
 ```bash
-go install github.com/stefan/project-manager@latest
+go install github.com/stefanmunz/project-manager@latest
 ```
 
 ### Building from Source
@@ -30,7 +30,7 @@ go install github.com/stefan/project-manager@latest
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/stefan/project-manager.git
+git clone https://github.com/stefanmunz/project-manager.git
 cd project-manager
 ```
 
@@ -245,6 +245,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/stefan/project-manager/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/stefan/project-manager/discussions)
-- **Documentation**: [Wiki](https://github.com/stefan/project-manager/wiki)
+- **Issues**: [GitHub Issues](https://github.com/stefanmunz/project-manager/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/stefanmunz/project-manager/discussions)
+- **Documentation**: [Wiki](https://github.com/stefanmunz/project-manager/wiki)

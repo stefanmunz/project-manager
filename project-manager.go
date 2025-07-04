@@ -483,12 +483,40 @@ func (m Model) runNextAgent() tea.Cmd {
 			return tickMsg{output: "", err: fmt.Errorf("invalid command")}
 		}
 
+		// Create log file for this agent
+		now := time.Now()
+		logFileName := fmt.Sprintf("%s-%s-party-agent-%d.log",
+			strings.ToLower(now.Format("Monday")),
+			now.Format("15-04-05"),
+			m.CurrentTicket+1)
+		
+		logFile, err := os.Create(logFileName)
+		if err != nil {
+			return tickMsg{output: "", err: fmt.Errorf("failed to create log file: %w", err)}
+		}
+
 		// Append prompt as a command-line argument
 		args := append(cmdParts[1:], prompt)
 		cmd := exec.Command(cmdParts[0], args...)
+		
+		// Redirect both stdout and stderr to the log file
+		cmd.Stdout = logFile
+		cmd.Stderr = logFile
+
+		// Write initial info to log
+		fmt.Fprintf(logFile, "=== Agent %d starting at %s ===\n", m.CurrentTicket+1, now.Format("15:04:05"))
+		fmt.Fprintf(logFile, "Command: %s %s\n", cmdParts[0], strings.Join(args, " "))
+		fmt.Fprintf(logFile, "Working directory: %s\n", func() string {
+			if wd, err := os.Getwd(); err == nil {
+				return wd
+			}
+			return "unknown"
+		}())
+		fmt.Fprintf(logFile, "\n--- Agent Output ---\n")
 
 		// Start the command asynchronously
 		if err := cmd.Start(); err != nil {
+			logFile.Close()
 			return tickMsg{output: "", err: err}
 		}
 

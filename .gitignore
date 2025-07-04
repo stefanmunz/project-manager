@@ -12,6 +12,7 @@ stefan.md
 *.log
 agent-execution.log
 debug-agent.log
+*-party-agent-*.log
 
 # IDE and system files
 .DS_Store

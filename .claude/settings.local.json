@@ -9,7 +9,8 @@
       "Bash(git add:*)",
       "Bash(go build:*)",
       "Bash(grep:*)",
-      "Bash(awk:*)"
+      "Bash(awk:*)",
+      "Bash(go test:*)"
     ],
     "deny": []
   }

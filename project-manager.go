@@ -395,9 +395,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.CurrentTicket+1)
 
 		if logFile, err := os.OpenFile(logFileName, os.O_APPEND|os.O_WRONLY, 0644); err == nil {
-			fmt.Fprintf(logFile, "\n--- Agent Completed at %s ---\n", now.Format("15:04:05"))
-			fmt.Fprintf(logFile, "Kill file content: %s\n", msg.content)
-			fmt.Fprintf(logFile, "Working directory at completion: %s\n", func() string {
+			_, _ = fmt.Fprintf(logFile, "\n--- Agent Completed at %s ---\n", now.Format("15:04:05"))
+			_, _ = fmt.Fprintf(logFile, "Kill file content: %s\n", msg.content)
+			_, _ = fmt.Fprintf(logFile, "Working directory at completion: %s\n", func() string {
 				if wd, err := os.Getwd(); err == nil {
 					return wd
 				}
@@ -406,23 +406,23 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			// List all .sh files in current directory
 			if files, err := os.ReadDir("."); err == nil {
-				fmt.Fprintf(logFile, "Shell scripts in current directory:\n")
+				_, _ = fmt.Fprintf(logFile, "Shell scripts in current directory:\n")
 				for _, file := range files {
 					if strings.HasSuffix(file.Name(), ".sh") {
 						if info, err := file.Info(); err == nil {
-							fmt.Fprintf(logFile, "  - %s (size: %d, modified: %s)\n",
+							_, _ = fmt.Fprintf(logFile, "  - %s (size: %d, modified: %s)\n",
 								file.Name(), info.Size(), info.ModTime().Format("15:04:05"))
 						}
 					}
 				}
 			}
 
-			fmt.Fprintf(logFile, "Party.sh exists: %v\n", fileExists("party.sh"))
+			_, _ = fmt.Fprintf(logFile, "Party.sh exists: %v\n", fileExists("party.sh"))
 			if content, err := os.ReadFile("party.sh"); err == nil {
-				fmt.Fprintf(logFile, "Party.sh size: %d bytes\n", len(content))
-				fmt.Fprintf(logFile, "Party.sh first 100 chars: %.100s...\n", string(content))
+				_, _ = fmt.Fprintf(logFile, "Party.sh size: %d bytes\n", len(content))
+				_, _ = fmt.Fprintf(logFile, "Party.sh first 100 chars: %.100s...\n", string(content))
 			}
-			logFile.Close()
+			_ = logFile.Close()
 		}
 
 		// Delete the kill file
@@ -612,19 +612,19 @@ func (m Model) runNextAgent() tea.Cmd {
 		cmd := exec.Command(cmdParts[0], args...)
 
 		// Write initial info to log
-		fmt.Fprintf(logFile, "=== Agent %d starting at %s ===\n", m.CurrentTicket+1, now.Format("15:04:05"))
-		fmt.Fprintf(logFile, "Command: %s %s\n", cmdParts[0], strings.Join(args, " "))
-		fmt.Fprintf(logFile, "Working directory: %s\n", func() string {
+		_, _ = fmt.Fprintf(logFile, "=== Agent %d starting at %s ===\n", m.CurrentTicket+1, now.Format("15:04:05"))
+		_, _ = fmt.Fprintf(logFile, "Command: %s %s\n", cmdParts[0], strings.Join(args, " "))
+		_, _ = fmt.Fprintf(logFile, "Working directory: %s\n", func() string {
 			if wd, err := os.Getwd(); err == nil {
 				return wd
 			}
 			return "unknown"
 		}())
-		fmt.Fprintf(logFile, "Prompt: %s\n", prompt)
-		fmt.Fprintf(logFile, "\n--- Agent Execution Started ---\n")
-		fmt.Fprintf(logFile, "Note: Agent output is not captured here to allow file writes.\n")
-		fmt.Fprintf(logFile, "Check party.sh and killmenow.md for agent results.\n")
-		logFile.Close()
+		_, _ = fmt.Fprintf(logFile, "Prompt: %s\n", prompt)
+		_, _ = fmt.Fprintf(logFile, "\n--- Agent Execution Started ---\n")
+		_, _ = fmt.Fprintf(logFile, "Note: Agent output is not captured here to allow file writes.\n")
+		_, _ = fmt.Fprintf(logFile, "Check party.sh and killmenow.md for agent results.\n")
+		_ = logFile.Close()
 
 		// Start the command asynchronously WITHOUT redirecting output
 		// This allows the agent to write to files normally

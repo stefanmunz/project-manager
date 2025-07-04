@@ -313,6 +313,23 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.CurrentCmd = nil
 		}
 
+		// Log the completion
+		now := time.Now()
+		logFileName := fmt.Sprintf("%s-%s-party-agent-%d.log",
+			strings.ToLower(now.Format("Monday")),
+			now.Format("15-04-05"),
+			m.CurrentTicket+1)
+		
+		if logFile, err := os.OpenFile(logFileName, os.O_APPEND|os.O_WRONLY, 0644); err == nil {
+			fmt.Fprintf(logFile, "\n--- Agent Completed at %s ---\n", now.Format("15:04:05"))
+			fmt.Fprintf(logFile, "Kill file content: %s\n", msg.content)
+			fmt.Fprintf(logFile, "Party.sh exists: %v\n", fileExists("party.sh"))
+			if content, err := os.ReadFile("party.sh"); err == nil {
+				fmt.Fprintf(logFile, "Party.sh size: %d bytes\n", len(content))
+			}
+			logFile.Close()
+		}
+
 		// Delete the kill file
 		_ = os.Remove("killmenow.md")
 
@@ -498,10 +515,6 @@ func (m Model) runNextAgent() tea.Cmd {
 		// Append prompt as a command-line argument
 		args := append(cmdParts[1:], prompt)
 		cmd := exec.Command(cmdParts[0], args...)
-		
-		// Redirect both stdout and stderr to the log file
-		cmd.Stdout = logFile
-		cmd.Stderr = logFile
 
 		// Write initial info to log
 		fmt.Fprintf(logFile, "=== Agent %d starting at %s ===\n", m.CurrentTicket+1, now.Format("15:04:05"))
@@ -512,11 +525,15 @@ func (m Model) runNextAgent() tea.Cmd {
 			}
 			return "unknown"
 		}())
-		fmt.Fprintf(logFile, "\n--- Agent Output ---\n")
+		fmt.Fprintf(logFile, "Prompt: %s\n", prompt)
+		fmt.Fprintf(logFile, "\n--- Agent Execution Started ---\n")
+		fmt.Fprintf(logFile, "Note: Agent output is not captured here to allow file writes.\n")
+		fmt.Fprintf(logFile, "Check party.sh and killmenow.md for agent results.\n")
+		logFile.Close()
 
-		// Start the command asynchronously
+		// Start the command asynchronously WITHOUT redirecting output
+		// This allows the agent to write to files normally
 		if err := cmd.Start(); err != nil {
-			logFile.Close()
 			return tickMsg{output: "", err: err}
 		}
 
@@ -734,6 +751,11 @@ func (m Model) renderCompleted() string {
 
 	s += "\n" + infoStyle.Render("Press q to quit")
 	return s
+}
+
+func fileExists(filename string) bool {
+	_, err := os.Stat(filename)
+	return !os.IsNotExist(err)
 }
 
 func main() {

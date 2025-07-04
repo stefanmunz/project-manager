@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -440,7 +439,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func parseTickets(path string) ([]Ticket, error) {
-	content, err := ioutil.ReadFile(path)
+	content, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -470,7 +469,7 @@ func parseTickets(path string) ([]Ticket, error) {
 
 func (m Model) runNextAgent() tea.Cmd {
 	return func() tea.Msg {
-		standardPrompt, err := ioutil.ReadFile(m.StandardPromptPath)
+		standardPrompt, err := os.ReadFile(m.StandardPromptPath)
 		if err != nil {
 			return tickMsg{output: "", err: err}
 		}

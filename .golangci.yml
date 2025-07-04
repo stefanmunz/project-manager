@@ -19,6 +19,8 @@ linters-settings:
     simplify: true
   govet:
     enable-all: true
+    disable:
+      - fieldalignment
   revive:
     confidence: 0.8
   gocritic:

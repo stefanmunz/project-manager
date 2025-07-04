@@ -632,7 +632,7 @@ func (m Model) renderRunning() string {
 	return s
 }
 
-func (m Model) getTicketStatus(index int, ticket Ticket) (status string, timeInfo string) {
+func (m Model) getTicketStatus(index int, ticket Ticket) (status, timeInfo string) {
 	if index < m.CurrentTicket {
 		// Completed tickets - show duration
 		if ticket.Failed {

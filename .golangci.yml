@@ -1,7 +1,6 @@
 linters:
   enable:
     - gofmt
-    - golint
     - govet
     - ineffassign
     - misspell
@@ -13,14 +12,15 @@ linters:
     - staticcheck
     - unused
     - errcheck
+    - revive
 
 linters-settings:
   gofmt:
     simplify: true
   govet:
-    check-shadowing: true
-  golint:
-    min-confidence: 0.8
+    enable-all: true
+  revive:
+    confidence: 0.8
   gocritic:
     enabled-tags:
       - diagnostic

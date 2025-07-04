@@ -25,13 +25,17 @@ func TestInitialModel(t *testing.T) {
 	if m.SelectedAgent != 0 {
 		t.Errorf("Default agent should be 0 (claude), got %d", m.SelectedAgent)
 	}
-	
+
 	if m.InputFolder != "input" {
 		t.Errorf("Default input folder should be 'input', got %s", m.InputFolder)
 	}
-	
+
 	if len(m.FolderOptions) != 2 {
 		t.Errorf("Should have 2 folder options, got %d", len(m.FolderOptions))
+	}
+
+	if m.FolderOptions[1] != "Other" {
+		t.Errorf("Second folder option should be 'Other', got %s", m.FolderOptions[1])
 	}
 }
 
@@ -228,6 +232,7 @@ func TestViewOutput(t *testing.T) {
 		state AppState
 		setup func(*Model)
 	}{
+		{StateFolderSelection, nil},
 		{StateFileCheck, nil},
 		{StateFileCheckResults, nil},
 		{StateFilePicker, func(m *Model) {
@@ -236,6 +241,7 @@ func TestViewOutput(t *testing.T) {
 		}},
 		{StateAgentSelection, nil},
 		{StateCustomCommandEntry, nil},
+		{StateCustomFolderEntry, nil},
 		{StateConfirmation, func(m *Model) {
 			m.Tickets = []Ticket{{Number: 1, Description: "Test"}}
 		}},
@@ -311,14 +317,14 @@ func TestExponentialBackoff(t *testing.T) {
 
 func TestGetTicketStatusWithError(t *testing.T) {
 	m := initialModel()
-	
+
 	// Set up tickets
 	m.Tickets = []Ticket{
 		{Number: 1, Description: "First", Completed: true, StartTime: time.Now().Add(-10 * time.Minute), EndTime: time.Now().Add(-8 * time.Minute)},
 		{Number: 2, Description: "Second", StartTime: time.Now().Add(-5 * time.Minute), EndTime: time.Now().Add(-3 * time.Minute)},
 		{Number: 3, Description: "Third"},
 	}
-	
+
 	// Test cases for different scenarios
 	tests := []struct {
 		name           string
@@ -376,7 +382,7 @@ func TestGetTicketStatusWithError(t *testing.T) {
 			expectTimeInfo: false,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Set up model state
@@ -384,25 +390,25 @@ func TestGetTicketStatusWithError(t *testing.T) {
 			m.ProcessRunning = tt.processRunning
 			m.ProcessError = tt.processError
 			m.IsWaiting = tt.isWaiting
-			
+
 			if tt.isWaiting {
 				m.WaitingUntil = time.Now().Add(5 * time.Second)
 			}
-			
+
 			// Mark first ticket as failed if needed for test
 			if tt.name == "Previous failed ticket" {
 				m.Tickets[0].Failed = true
 				m.Tickets[0].Completed = false
 			}
-			
+
 			// Get status
 			status, timeInfo := m.getTicketStatus(tt.ticketIndex, m.Tickets[tt.ticketIndex])
-			
+
 			// Check status
 			if !strings.Contains(status, strings.TrimSuffix(tt.expectedStatus, " ")) {
 				t.Errorf("Expected status to contain %q, got %q", tt.expectedStatus, status)
 			}
-			
+
 			// Check time info
 			if tt.expectTimeInfo && timeInfo == "" {
 				t.Error("Expected time info, but got empty string")

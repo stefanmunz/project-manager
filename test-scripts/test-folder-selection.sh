@@ -29,9 +29,10 @@ ls -la $TEST_DIR/
 
 echo ""
 echo "NOTE: When the project manager starts:"
-echo "1. Select 'Browse for folder'"
-echo "2. Navigate to and select the '$TEST_DIR' folder"
-echo "3. The tool should find all files in that custom location"
+echo "1. You'll see two options: 'Use default input folder' and 'Other'"
+echo "2. Select 'Other' using arrow keys"
+echo "3. Enter the folder path: $TEST_DIR"
+echo "4. The tool should find all files in that custom location"
 echo ""
 echo "Press Enter to start the project manager..."
 read

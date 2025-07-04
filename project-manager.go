@@ -74,6 +74,7 @@ const (
 	StateConfirmation
 	StateRunning
 	StateCompleted
+	StateCustomFolderEntry
 )
 
 // Model represents the application's state and implements the tea.Model interface
@@ -83,19 +84,20 @@ type Model struct {
 	Height int
 
 	// Folder and file paths
-	InputFolder         string
-	SpecificationPath   string
-	TicketsPath         string
-	StandardPromptPath  string
-	MissingFiles        []string
-	CurrentMissingIndex int
-	UseDefaultFolder    bool
-	FolderOptions       []string
+	InputFolder          string
+	SpecificationPath    string
+	TicketsPath          string
+	StandardPromptPath   string
+	MissingFiles         []string
+	CurrentMissingIndex  int
+	UseDefaultFolder     bool
+	FolderOptions        []string
 	SelectedFolderOption int
 
 	// Components
-	FilePicker filepicker.Model
-	TextInput  textinput.Model
+	FilePicker  filepicker.Model
+	TextInput   textinput.Model
+	FolderInput textinput.Model
 
 	// Agent selection
 	SelectedAgent      int // 0 for claude-code, 1 for other
@@ -131,6 +133,10 @@ func initialModel() Model {
 	ti.Placeholder = "Enter custom agent command..."
 	ti.CharLimit = 200
 
+	fi := textinput.New()
+	fi.Placeholder = "Enter relative folder path (e.g., features/new-feature)..."
+	fi.CharLimit = 500
+
 	return Model{
 		State:                StateFolderSelection,
 		InputFolder:          "input",
@@ -139,10 +145,11 @@ func initialModel() Model {
 		StandardPromptPath:   "standard-prompt.md",
 		MissingFiles:         []string{},
 		TextInput:            ti,
+		FolderInput:          fi,
 		SelectedAgent:        0,
 		Tickets:              []Ticket{},
 		DelaySeconds:         2, // Default 2 second delay between agents
-		FolderOptions:        []string{"Use default 'input' folder", "Browse for folder"},
+		FolderOptions:        []string{"Use default 'input' folder", "Other"},
 		SelectedFolderOption: 0,
 	}
 }
@@ -221,18 +228,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.State = StateFileCheck
 					return m, checkFiles(m.InputFolder)
 				} else {
-					// Browse for folder
-					fp := filepicker.New()
-					fp.CurrentDirectory, _ = os.Getwd()
-					fp.ShowHidden = false
-					fp.DirAllowed = true
-					fp.FileAllowed = false
-					m.FilePicker = fp
-					m.State = StateFilePicker
-					m.CurrentMissingIndex = -1 // Special value to indicate folder selection
-					return m, m.FilePicker.Init()
+					// Other - custom folder entry
+					m.State = StateCustomFolderEntry
+					m.FolderInput.SetValue("") // Clear any previous value
+					m.FolderInput.Focus()
+					return m, m.FolderInput.Focus()
 				}
-			
+
 			case StateAgentSelection:
 				if m.SelectedAgent == 0 {
 					m.CustomAgentCommand = "claude --dangerously-skip-permissions"
@@ -251,6 +253,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.State = StateConfirmation
 				}
 
+			case StateCustomFolderEntry:
+				if m.FolderInput.Value() != "" {
+					m.InputFolder = m.FolderInput.Value()
+					m.SpecificationPath = fmt.Sprintf("%s/specification.md", m.InputFolder)
+					m.TicketsPath = fmt.Sprintf("%s/tickets.md", m.InputFolder)
+					m.StandardPromptPath = fmt.Sprintf("%s/standard-prompt.md", m.InputFolder)
+					m.State = StateFileCheck
+					return m, checkFiles(m.InputFolder)
+				}
+
 			case StateConfirmation:
 				m.ConfirmReady = true
 			}
@@ -260,6 +272,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.State == StateCustomCommandEntry {
 			var cmd tea.Cmd
 			m.TextInput, cmd = m.TextInput.Update(msg)
+			return m, cmd
+		}
+
+		// Handle text input in custom folder entry
+		if m.State == StateCustomFolderEntry {
+			var cmd tea.Cmd
+			m.FolderInput, cmd = m.FolderInput.Update(msg)
 			return m, cmd
 		}
 
@@ -374,7 +393,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			strings.ToLower(now.Format("Monday")),
 			now.Format("15-04-05"),
 			m.CurrentTicket+1)
-		
+
 		if logFile, err := os.OpenFile(logFileName, os.O_APPEND|os.O_WRONLY, 0644); err == nil {
 			fmt.Fprintf(logFile, "\n--- Agent Completed at %s ---\n", now.Format("15:04:05"))
 			fmt.Fprintf(logFile, "Kill file content: %s\n", msg.content)
@@ -384,20 +403,20 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return "unknown"
 			}())
-			
+
 			// List all .sh files in current directory
 			if files, err := os.ReadDir("."); err == nil {
 				fmt.Fprintf(logFile, "Shell scripts in current directory:\n")
 				for _, file := range files {
 					if strings.HasSuffix(file.Name(), ".sh") {
 						if info, err := file.Info(); err == nil {
-							fmt.Fprintf(logFile, "  - %s (size: %d, modified: %s)\n", 
+							fmt.Fprintf(logFile, "  - %s (size: %d, modified: %s)\n",
 								file.Name(), info.Size(), info.ModTime().Format("15:04:05"))
 						}
 					}
 				}
 			}
-			
+
 			fmt.Fprintf(logFile, "Party.sh exists: %v\n", fileExists("party.sh"))
 			if content, err := os.ReadFile("party.sh"); err == nil {
 				fmt.Fprintf(logFile, "Party.sh size: %d bytes\n", len(content))
@@ -582,7 +601,7 @@ func (m Model) runNextAgent() tea.Cmd {
 			strings.ToLower(now.Format("Monday")),
 			now.Format("15-04-05"),
 			m.CurrentTicket+1)
-		
+
 		logFile, err := os.Create(logFileName)
 		if err != nil {
 			return tickMsg{output: "", err: fmt.Errorf("failed to create log file: %w", err)}
@@ -652,6 +671,9 @@ func (m Model) View() string {
 	s := titleStyle.Render("Project Manager") + "\n\n"
 
 	switch m.State {
+	case StateFolderSelection:
+		s += m.renderFolderSelection()
+
 	case StateFileCheck:
 		s += m.renderFileCheck()
 
@@ -666,6 +688,9 @@ func (m Model) View() string {
 
 	case StateCustomCommandEntry:
 		s += m.renderCustomCommandEntry()
+
+	case StateCustomFolderEntry:
+		s += m.renderCustomFolderEntry()
 
 	case StateConfirmation:
 		s += m.renderConfirmation()
@@ -746,6 +771,14 @@ func (m Model) renderAgentSelection() string {
 func (m Model) renderCustomCommandEntry() string {
 	s := "Enter custom agent command:\n\n"
 	s += m.TextInput.View() + "\n\n"
+	s += infoStyle.Render("Press Enter when done")
+	return s
+}
+
+func (m Model) renderCustomFolderEntry() string {
+	s := "Enter relative folder path:\n\n"
+	s += m.FolderInput.View() + "\n\n"
+	s += infoStyle.Render("Enter a folder path relative to current directory (e.g., features/new-feature)\n")
 	s += infoStyle.Render("Press Enter when done")
 	return s
 }

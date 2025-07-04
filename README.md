@@ -51,7 +51,7 @@ go build -o project-manager
 1. Run the application:
 
 ```bash
-project-manager
+./project-manager
 ```
 
 2. The TUI will guide you through:
@@ -61,7 +61,9 @@ project-manager
    - Confirming before execution
    - Monitoring real-time progress
 
-There is a small example in the input folder that makes three agents contribute to a party script. If you have Claude installed (and you are YOLO enough to run it with --dangerously-skip-permissions), you can just check out the repository, build the tool and run it with the defaults. You can then watch the party script file and see how it is enhanced by each agent.
+There is a small example in the input folder that makes three agents contribute to a party script. If you have Claude installed (and you are YOLO enough to run it with --dangerously-skip-permissions), you can just check out the repository, build the tool and run it with the defaults. You can then watch the party script file and see how it is enhanced by each agent. Here is how it should look like:
+
+![Party Script Example](images/screenshot-party-run.png)
 
 ## Usage
 

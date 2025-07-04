@@ -587,8 +587,8 @@ func (m Model) runNextAgent() tea.Cmd {
 		}
 
 		// Add kill file instruction to the prompt
-		prompt := fmt.Sprintf("%s Please use the documentation in the input folder, especially the specification.md and the tickets.md. Please work on ticket %d. As your final task, create a file named 'killmenow.md' containing either 'success' or 'failure' to indicate whether you successfully completed the task.",
-			string(standardPrompt), m.CurrentTicket+1)
+		prompt := fmt.Sprintf("%s Please use the documentation in the %s folder, especially the specification.md and the tickets.md. Please work on ticket %d. As your final task, create a file named 'killmenow.md' containing either 'success' or 'failure' to indicate whether you successfully completed the task.",
+			string(standardPrompt), m.InputFolder, m.CurrentTicket+1)
 
 		cmdParts := strings.Fields(m.CustomAgentCommand)
 		if len(cmdParts) == 0 {

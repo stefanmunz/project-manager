@@ -315,6 +315,62 @@ func TestExponentialBackoff(t *testing.T) {
 	}
 }
 
+func TestAgentPromptUsesCorrectFolder(t *testing.T) {
+	// Create a temporary directory for test files
+	tmpDir, err := os.MkdirTemp("", "prompt-folder-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Create a test standard-prompt.md file
+	standardPromptContent := "You are a test agent."
+	standardPromptPath := filepath.Join(tmpDir, "standard-prompt.md")
+	if err := os.WriteFile(standardPromptPath, []byte(standardPromptContent), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create a model with custom folder path
+	m := initialModel()
+	m.InputFolder = "features/my-custom-feature"
+	m.StandardPromptPath = standardPromptPath
+	m.CustomAgentCommand = "echo test"
+	m.Tickets = []Ticket{{Number: 1, Description: "Test ticket"}}
+	m.CurrentTicket = 0
+
+	// Execute runNextAgent to get the command
+	cmd := m.runNextAgent()
+	
+	// Execute the command to generate the log file
+	_ = cmd()
+	
+	// The command should create a log file, let's find it
+	files, err := filepath.Glob("*-party-agent-1.log")
+	if err != nil || len(files) == 0 {
+		t.Fatal("No log file created")
+	}
+	
+	// Read the log file
+	logContent, err := os.ReadFile(files[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	
+	// Clean up the log file
+	defer os.Remove(files[0])
+	
+	// Check that the prompt contains the correct folder path
+	logStr := string(logContent)
+	
+	if strings.Contains(logStr, "in the input folder") {
+		t.Error("Prompt still contains hardcoded 'input folder' reference")
+	}
+	
+	if !strings.Contains(logStr, "in the features/my-custom-feature folder") {
+		t.Error("Prompt does not contain the correct custom folder path")
+	}
+}
+
 func TestGetTicketStatusWithError(t *testing.T) {
 	m := initialModel()
 

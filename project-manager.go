@@ -297,7 +297,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case checkKillFileMsg:
 		// Check if killmenow.md exists
-		if content, err := ioutil.ReadFile("killmenow.md"); err == nil {
+		if content, err := os.ReadFile("killmenow.md"); err == nil {
 			// File found, return the content
 			return m.Update(killFileFoundMsg{content: string(content)})
 		}

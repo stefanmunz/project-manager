@@ -20,6 +20,9 @@ debug-agent.log
 .vscode/
 .idea/
 
+# Claude local settings
+.claude/settings.local.json
+
 # Go build artifacts
 *.exe
 *.dll

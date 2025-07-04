@@ -8,7 +8,8 @@
       "Bash(rm:*)",
       "Bash(git add:*)",
       "Bash(go build:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(awk:*)"
     ],
     "deny": []
   }

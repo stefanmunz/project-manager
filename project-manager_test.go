@@ -25,32 +25,42 @@ func TestInitialModel(t *testing.T) {
 }
 
 func TestCheckFiles(t *testing.T) {
-	// Create temporary directory and files
+	tmpDir, inputDir := setupTestDirectory(t)
+	defer os.RemoveAll(tmpDir)
+
+	// Test with missing files
+	testMissingFiles(t)
+
+	// Create files and test again
+	createTestFiles(t, inputDir)
+	testFoundFiles(t)
+}
+
+func setupTestDirectory(t *testing.T) (string, string) {
 	tmpDir, err := os.MkdirTemp("", "project-manager-test")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
 
-	// Create input directory
 	inputDir := filepath.Join(tmpDir, "input")
 	if err := os.Mkdir(inputDir, 0755); err != nil {
 		t.Fatal(err)
 	}
 
-	// Save original directory
 	originalDir, err := os.Getwd()
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Chdir(originalDir)
+	t.Cleanup(func() { os.Chdir(originalDir) })
 
-	// Change to temp directory
 	if err := os.Chdir(tmpDir); err != nil {
 		t.Fatal(err)
 	}
 
-	// Test with missing files
+	return tmpDir, inputDir
+}
+
+func testMissingFiles(t *testing.T) {
 	msg := checkFiles()
 	result, ok := msg.(fileCheckResult)
 	if !ok {
@@ -64,8 +74,9 @@ func TestCheckFiles(t *testing.T) {
 	if len(result.MissingFiles) != 3 {
 		t.Errorf("Should have 3 missing files, got %d", len(result.MissingFiles))
 	}
+}
 
-	// Create files and test again
+func createTestFiles(t *testing.T, inputDir string) {
 	for _, file := range []string{"specification.md", "tickets.md", "standard-prompt.md"} {
 		f, err := os.Create(filepath.Join(inputDir, file))
 		if err != nil {
@@ -73,9 +84,11 @@ func TestCheckFiles(t *testing.T) {
 		}
 		f.Close()
 	}
+}
 
-	msg = checkFiles()
-	result, ok = msg.(fileCheckResult)
+func testFoundFiles(t *testing.T) {
+	msg := checkFiles()
+	result, ok := msg.(fileCheckResult)
 	if !ok {
 		t.Fatal("checkFiles should return fileCheckResult")
 	}
@@ -282,4 +295,3 @@ func TestExponentialBackoff(t *testing.T) {
 		t.Errorf("Delay should be capped at 30 seconds, got %d", m.DelaySeconds)
 	}
 }
-

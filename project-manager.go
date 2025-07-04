@@ -532,133 +532,172 @@ func (m Model) View() string {
 
 	switch m.State {
 	case StateFileCheck:
-		s += "Checking for required files...\n"
+		s += m.renderFileCheck()
 
 	case StateFileCheckResults:
-		s += "Checking for required files...\n\n"
-		s += successStyle.Render("✅ Successfully found specification.md") + "\n"
-		s += successStyle.Render("✅ Successfully found tickets.md") + "\n"
-		s += successStyle.Render("✅ Successfully found standard-prompt.md") + "\n\n"
-		s += infoStyle.Render("All files found! Press any key to continue...")
+		s += m.renderFileCheckResults()
 
 	case StateFilePicker:
-		s += fmt.Sprintf("Missing file: %s\n", errorStyle.Render(m.MissingFiles[m.CurrentMissingIndex]))
-		s += "Please select the file location:\n\n"
-		s += m.FilePicker.View()
+		s += m.renderFilePicker()
 
 	case StateAgentSelection:
-		s += "Select coding agent:\n\n"
-
-		choices := []string{
-			"claude --dangerously-skip-permissions",
-			"Other (enter custom command)",
-		}
-
-		for i, choice := range choices {
-			if i == m.SelectedAgent {
-				s += selectedStyle.Render("→ "+choice) + "\n"
-			} else {
-				s += "  " + choice + "\n"
-			}
-		}
-
-		s += "\n" + infoStyle.Render("Press Enter to continue")
+		s += m.renderAgentSelection()
 
 	case StateCustomCommandEntry:
-		s += "Enter custom agent command:\n\n"
-		s += m.TextInput.View() + "\n\n"
-		s += infoStyle.Render("Press Enter when done")
+		s += m.renderCustomCommandEntry()
 
 	case StateConfirmation:
-		s += "Ready to start execution:\n\n"
-		s += fmt.Sprintf("📁 Specification: %s\n", m.SpecificationPath)
-		s += fmt.Sprintf("📋 Tickets: %s (%d tickets)\n", m.TicketsPath, len(m.Tickets))
-		s += fmt.Sprintf("📝 Prompt: %s\n", m.StandardPromptPath)
-		s += fmt.Sprintf("🤖 Agent: %s\n", m.CustomAgentCommand)
-		s += fmt.Sprintf("⏱️  Delay between agents: %d seconds\n", m.DelaySeconds)
-
-		s += "\n" + successStyle.Render("Press Enter to start")
+		s += m.renderConfirmation()
 
 	case StateRunning:
-		s += fmt.Sprintf("Executing agents... (Ticket %d/%d)\n\n", m.CurrentTicket+1, len(m.Tickets))
-
-		// Show ticket status with emojis
-		for i, ticket := range m.Tickets {
-			var status string
-			var timeInfo string
-
-			if i < m.CurrentTicket {
-				// Completed tickets - show duration
-				if ticket.Failed {
-					status = "❌"
-				} else {
-					status = "✅"
-				}
-				duration := ticket.EndTime.Sub(ticket.StartTime)
-				timeInfo = fmt.Sprintf(" - %s", formatDuration(duration))
-			} else if i == m.CurrentTicket {
-				// Current ticket
-				if m.ProcessRunning {
-					status = "🔄"
-					// Show live duration for running ticket
-					if !ticket.StartTime.IsZero() {
-						currentDuration := time.Since(ticket.StartTime)
-						timeInfo = fmt.Sprintf(" - %s", formatDuration(currentDuration))
-					}
-				} else if m.IsWaiting {
-					remainingTime := int(time.Until(m.WaitingUntil).Seconds())
-					if remainingTime < 0 {
-						remainingTime = 0
-					}
-					status = fmt.Sprintf("⏳ (%ds)", remainingTime)
-				} else {
-					status = "⏸️"
-				}
-			} else {
-				status = "⏳"
-			}
-
-			s += fmt.Sprintf("%s Ticket %d: %s%s\n", status, ticket.Number, ticket.Description, timeInfo)
-		}
-
-		if m.ProcessError != nil {
-			s += "\n" + errorStyle.Render(fmt.Sprintf("Error: %v", m.ProcessError)) + "\n"
-		}
+		s += m.renderRunning()
 
 	case StateCompleted:
-		s += successStyle.Render("All agents completed!") + "\n\n"
-
-		// Show detailed ticket results with timing
-		var totalDuration time.Duration
-		successful := 0
-		failed := 0
-
-		for _, ticket := range m.Tickets {
-			duration := ticket.EndTime.Sub(ticket.StartTime)
-			totalDuration += duration
-
-			status := "✅"
-			if ticket.Failed {
-				status = "❌"
-				failed++
-			} else {
-				successful++
-			}
-
-			s += fmt.Sprintf("%s Ticket %d: %s - %s\n",
-				status, ticket.Number, ticket.Description, formatDuration(duration))
-		}
-
-		// Show summary
-		s += "\nSummary:\n"
-		s += fmt.Sprintf("✅ Successful: %d\n", successful)
-		s += fmt.Sprintf("❌ Failed: %d\n", failed)
-		s += fmt.Sprintf("📊 Total: %d\n", len(m.Tickets))
-		s += fmt.Sprintf("⏱️  Total time: %s\n", formatDuration(totalDuration))
-
-		s += "\n" + infoStyle.Render("Press q to quit")
+		s += m.renderCompleted()
 	}
 
+	return s
+}
+
+func (m Model) renderFileCheck() string {
+	return "Checking for required files...\n"
+}
+
+func (m Model) renderFileCheckResults() string {
+	s := "Checking for required files...\n\n"
+	s += successStyle.Render("✅ Successfully found specification.md") + "\n"
+	s += successStyle.Render("✅ Successfully found tickets.md") + "\n"
+	s += successStyle.Render("✅ Successfully found standard-prompt.md") + "\n\n"
+	s += infoStyle.Render("All files found! Press any key to continue...")
+	return s
+}
+
+func (m Model) renderFilePicker() string {
+	s := fmt.Sprintf("Missing file: %s\n", errorStyle.Render(m.MissingFiles[m.CurrentMissingIndex]))
+	s += "Please select the file location:\n\n"
+	s += m.FilePicker.View()
+	return s
+}
+
+func (m Model) renderAgentSelection() string {
+	s := "Select coding agent:\n\n"
+
+	choices := []string{
+		"claude --dangerously-skip-permissions",
+		"Other (enter custom command)",
+	}
+
+	for i, choice := range choices {
+		if i == m.SelectedAgent {
+			s += selectedStyle.Render("→ "+choice) + "\n"
+		} else {
+			s += "  " + choice + "\n"
+		}
+	}
+
+	s += "\n" + infoStyle.Render("Press Enter to continue")
+	return s
+}
+
+func (m Model) renderCustomCommandEntry() string {
+	s := "Enter custom agent command:\n\n"
+	s += m.TextInput.View() + "\n\n"
+	s += infoStyle.Render("Press Enter when done")
+	return s
+}
+
+func (m Model) renderConfirmation() string {
+	s := "Ready to start execution:\n\n"
+	s += fmt.Sprintf("📁 Specification: %s\n", m.SpecificationPath)
+	s += fmt.Sprintf("📋 Tickets: %s (%d tickets)\n", m.TicketsPath, len(m.Tickets))
+	s += fmt.Sprintf("📝 Prompt: %s\n", m.StandardPromptPath)
+	s += fmt.Sprintf("🤖 Agent: %s\n", m.CustomAgentCommand)
+	s += fmt.Sprintf("⏱️  Delay between agents: %d seconds\n", m.DelaySeconds)
+	s += "\n" + successStyle.Render("Press Enter to start")
+	return s
+}
+
+func (m Model) renderRunning() string {
+	s := fmt.Sprintf("Executing agents... (Ticket %d/%d)\n\n", m.CurrentTicket+1, len(m.Tickets))
+
+	// Show ticket status with emojis
+	for i, ticket := range m.Tickets {
+		status, timeInfo := m.getTicketStatus(i, ticket)
+		s += fmt.Sprintf("%s Ticket %d: %s%s\n", status, ticket.Number, ticket.Description, timeInfo)
+	}
+
+	if m.ProcessError != nil {
+		s += "\n" + errorStyle.Render(fmt.Sprintf("Error: %v", m.ProcessError)) + "\n"
+	}
+	return s
+}
+
+func (m Model) getTicketStatus(index int, ticket Ticket) (status string, timeInfo string) {
+	if index < m.CurrentTicket {
+		// Completed tickets - show duration
+		if ticket.Failed {
+			status = "❌"
+		} else {
+			status = "✅"
+		}
+		duration := ticket.EndTime.Sub(ticket.StartTime)
+		timeInfo = fmt.Sprintf(" - %s", formatDuration(duration))
+	} else if index == m.CurrentTicket {
+		// Current ticket
+		if m.ProcessRunning {
+			status = "🔄"
+			// Show live duration for running ticket
+			if !ticket.StartTime.IsZero() {
+				currentDuration := time.Since(ticket.StartTime)
+				timeInfo = fmt.Sprintf(" - %s", formatDuration(currentDuration))
+			}
+		} else if m.IsWaiting {
+			remainingTime := int(time.Until(m.WaitingUntil).Seconds())
+			if remainingTime < 0 {
+				remainingTime = 0
+			}
+			status = fmt.Sprintf("⏳ (%ds)", remainingTime)
+		} else {
+			status = "⏸️"
+		}
+	} else {
+		status = "⏳"
+	}
+	return status, timeInfo
+}
+
+func (m Model) renderCompleted() string {
+	s := successStyle.Render("All agents completed!") + "\n\n"
+
+	// Show detailed ticket results with timing
+	var totalDuration time.Duration
+	successful := 0
+	failed := 0
+
+	for _, ticket := range m.Tickets {
+		duration := ticket.EndTime.Sub(ticket.StartTime)
+		totalDuration += duration
+
+		status := "✅"
+		if ticket.Failed {
+			status = "❌"
+			failed++
+		} else {
+			successful++
+		}
+
+		s += fmt.Sprintf("%s Ticket %d: %s - %s\n",
+			status, ticket.Number, ticket.Description, formatDuration(duration))
+	}
+
+	// Show summary
+	s += "\nSummary:\n"
+	s += fmt.Sprintf("✅ Successful: %d\n", successful)
+	s += fmt.Sprintf("❌ Failed: %d\n", failed)
+	s += fmt.Sprintf("📊 Total: %d\n", len(m.Tickets))
+	s += fmt.Sprintf("⏱️  Total time: %s\n", formatDuration(totalDuration))
+
+	s += "\n" + infoStyle.Render("Press q to quit")
 	return s
 }
 

@@ -16,22 +16,22 @@ import (
 
 var (
 	titleStyle = lipgloss.NewStyle().
-		Bold(true).
-		Foreground(lipgloss.Color("170")).
-		MarginBottom(1)
+			Bold(true).
+			Foreground(lipgloss.Color("170")).
+			MarginBottom(1)
 
 	infoStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("241"))
+			Foreground(lipgloss.Color("241"))
 
 	errorStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("196"))
+			Foreground(lipgloss.Color("196"))
 
 	successStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("46"))
+			Foreground(lipgloss.Color("46"))
 
 	selectedStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("170")).
-		Bold(true)
+			Foreground(lipgloss.Color("170")).
+			Bold(true)
 )
 
 type tickMsg struct {
@@ -54,7 +54,7 @@ type processStartedMsg struct {
 }
 
 type fileCheckResult struct {
-	SpecificationFound   bool
+	SpecificationFound  bool
 	TicketsFound        bool
 	StandardPromptFound bool
 	MissingFiles        []string
@@ -78,38 +78,38 @@ const (
 
 // Model represents the application's state and implements the tea.Model interface
 type Model struct {
-	State           AppState
-	Width           int
-	Height          int
-	
+	State  AppState
+	Width  int
+	Height int
+
 	// File paths
 	SpecificationPath   string
 	TicketsPath         string
 	StandardPromptPath  string
 	MissingFiles        []string
 	CurrentMissingIndex int
-	
+
 	// Components
 	FilePicker filepicker.Model
 	TextInput  textinput.Model
-	
+
 	// Agent selection
 	SelectedAgent      int // 0 for claude-code, 1 for other
 	CustomAgentCommand string
-	
+
 	// Execution state
-	Tickets          []Ticket
-	CurrentTicket    int
-	ProcessRunning   bool
-	ProcessError     error
-	CurrentCmd       *exec.Cmd // Track running command
-	DelaySeconds     int       // Delay between agents
-	IsWaiting        bool      // Whether we're in waiting state
-	WaitingUntil     time.Time // When to start next agent
-	
+	Tickets        []Ticket
+	CurrentTicket  int
+	ProcessRunning bool
+	ProcessError   error
+	CurrentCmd     *exec.Cmd // Track running command
+	DelaySeconds   int       // Delay between agents
+	IsWaiting      bool      // Whether we're in waiting state
+	WaitingUntil   time.Time // When to start next agent
+
 	// UI state
-	Cursor        int
-	ConfirmReady  bool
+	Cursor       int
+	ConfirmReady bool
 }
 
 // Ticket represents a single task to be executed by an agent
@@ -126,7 +126,7 @@ func initialModel() Model {
 	ti := textinput.New()
 	ti.Placeholder = "Enter custom agent command..."
 	ti.CharLimit = 200
-	
+
 	return Model{
 		State:              StateFileCheck,
 		SpecificationPath:  "input/specification.md",
@@ -150,25 +150,25 @@ func checkFiles() tea.Msg {
 	result := fileCheckResult{
 		MissingFiles: []string{},
 	}
-	
+
 	if _, err := os.Stat(m.SpecificationPath); os.IsNotExist(err) {
 		result.MissingFiles = append(result.MissingFiles, "specification.md")
 	} else {
 		result.SpecificationFound = true
 	}
-	
+
 	if _, err := os.Stat(m.TicketsPath); os.IsNotExist(err) {
 		result.MissingFiles = append(result.MissingFiles, "tickets.md")
 	} else {
 		result.TicketsFound = true
 	}
-	
+
 	if _, err := os.Stat(m.StandardPromptPath); os.IsNotExist(err) {
 		result.MissingFiles = append(result.MissingFiles, "standard-prompt.md")
 	} else {
 		result.StandardPromptFound = true
 	}
-	
+
 	return result
 }
 
@@ -182,17 +182,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				_ = m.CurrentCmd.Process.Kill()
 			}
 			return m, tea.Quit
-			
+
 		case "up", "k":
 			if m.State == StateAgentSelection {
 				m.SelectedAgent = (m.SelectedAgent - 1 + 2) % 2
 			}
-			
+
 		case "down", "j":
 			if m.State == StateAgentSelection {
 				m.SelectedAgent = (m.SelectedAgent + 1) % 2
 			}
-		
+
 		case "enter":
 			switch m.State {
 			case StateAgentSelection:
@@ -206,36 +206,36 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.TextInput.Focus()
 					return m, m.TextInput.Focus()
 				}
-			
+
 			case StateCustomCommandEntry:
 				if m.TextInput.Value() != "" {
 					m.CustomAgentCommand = m.TextInput.Value()
 					m.State = StateConfirmation
 				}
-			
+
 			case StateConfirmation:
 				m.ConfirmReady = true
 			}
 		}
-		
+
 		// Handle text input in custom command entry
 		if m.State == StateCustomCommandEntry {
 			var cmd tea.Cmd
 			m.TextInput, cmd = m.TextInput.Update(msg)
 			return m, cmd
 		}
-		
+
 		// Handle any key press in StateFileCheckResults
 		if m.State == StateFileCheckResults {
 			// Any key press moves to agent selection
 			return m.Update(proceedToAgentSelectionMsg{})
 		}
-		
+
 		// Handle file picker navigation
 		if m.State == StateFilePicker {
 			var cmd tea.Cmd
 			m.FilePicker, cmd = m.FilePicker.Update(msg)
-			
+
 			if didSelect, path := m.FilePicker.DidSelectFile(msg); didSelect {
 				switch m.MissingFiles[m.CurrentMissingIndex] {
 				case "specification.md":
@@ -245,7 +245,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				case "standard-prompt.md":
 					m.StandardPromptPath = path
 				}
-				
+
 				m.CurrentMissingIndex++
 				if m.CurrentMissingIndex >= len(m.MissingFiles) {
 					m.State = StateAgentSelection
@@ -263,11 +263,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.err != nil {
 			m.ProcessError = msg.err
 			m.ProcessRunning = false
-			
+
 			// Check if it's an API overload error and increase delay
-			if strings.Contains(msg.output, "server overload") || 
-			   strings.Contains(msg.output, "rate limit") ||
-			   strings.Contains(msg.output, "too many requests") {
+			if strings.Contains(msg.output, "server overload") ||
+				strings.Contains(msg.output, "rate limit") ||
+				strings.Contains(msg.output, "too many requests") {
 				// Exponential backoff: double the delay, max 30 seconds
 				m.DelaySeconds *= 2
 				if m.DelaySeconds > 30 {
@@ -310,47 +310,47 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case killFileFoundMsg:
 		// Kill the process
 		if m.CurrentCmd != nil && m.CurrentCmd.Process != nil {
-			m.CurrentCmd.Process.Kill()
+			_ = m.CurrentCmd.Process.Kill()
 			m.CurrentCmd = nil
 		}
-		
+
 		// Delete the kill file
 		_ = os.Remove("killmenow.md")
-		
+
 		// Determine success or failure
 		if strings.Contains(strings.ToLower(msg.content), "success") {
 			m.ProcessError = nil
 		} else {
 			m.ProcessError = fmt.Errorf("agent reported failure")
 		}
-		
+
 		// Move to completion
 		return m.Update(processCompleteMsg{})
 
 	case processCompleteMsg:
 		m.ProcessRunning = false
-		
+
 		// Record end time for this ticket
 		m.Tickets[m.CurrentTicket].EndTime = time.Now()
-		
+
 		// Mark ticket as completed or failed based on error state
 		if m.ProcessError != nil {
 			m.Tickets[m.CurrentTicket].Failed = true
 		} else {
 			m.Tickets[m.CurrentTicket].Completed = true
 		}
-		
+
 		m.CurrentTicket++
-		
+
 		if m.CurrentTicket < len(m.Tickets) {
 			// Don't clear output yet - keep it visible during waiting
 			// We'll clear it when we actually start the next agent
-			
+
 			// Start waiting period
 			m.IsWaiting = true
 			m.WaitingUntil = time.Now().Add(time.Duration(m.DelaySeconds) * time.Second)
 			m.ProcessRunning = false
-			
+
 			// Return commands for both the waiting timer and the countdown update
 			return m, tea.Batch(
 				tea.Tick(time.Duration(m.DelaySeconds)*time.Second, func(t time.Time) tea.Msg {
@@ -364,16 +364,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.State = StateCompleted
 		}
 		return m, nil
-	
+
 	case waitingDoneMsg:
 		// Waiting period is over, start next agent
 		m.IsWaiting = false
-		
+
 		// Clear error state for next agent
 		m.ProcessError = nil
 		m.ProcessRunning = true
 		return m, m.runNextAgent()
-	
+
 	case time.Time:
 		// Update the view to refresh the countdown or running time
 		if m.IsWaiting && time.Now().Before(m.WaitingUntil) {
@@ -399,13 +399,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.MissingFiles = msg.MissingFiles
 			m.State = StateFilePicker
 			m.CurrentMissingIndex = 0
-			
+
 			fp := filepicker.New()
 			fp.CurrentDirectory, _ = os.Getwd()
 			m.FilePicker = fp
 			return m, m.FilePicker.Init()
 		}
-	
+
 	case proceedToAgentSelectionMsg:
 		// Transition from file check results to agent selection
 		if m.State == StateFileCheckResults {
@@ -435,7 +435,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.ConfirmReady = true
 	}
-	
+
 	return m, nil
 }
 
@@ -444,10 +444,10 @@ func parseTickets(path string) ([]Ticket, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	lines := strings.Split(string(content), "\n")
 	tickets := []Ticket{}
-	
+
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if strings.HasPrefix(line, "## Ticket ") {
@@ -464,7 +464,7 @@ func parseTickets(path string) ([]Ticket, error) {
 			}
 		}
 	}
-	
+
 	return tickets, nil
 }
 
@@ -474,25 +474,25 @@ func (m Model) runNextAgent() tea.Cmd {
 		if err != nil {
 			return tickMsg{output: "", err: err}
 		}
-		
+
 		// Add kill file instruction to the prompt
 		prompt := fmt.Sprintf("%s Please use the documentation in the input folder, especially the specification.md and the tickets.md. Please work on ticket %d. As your final task, create a file named 'killmenow.md' containing either 'success' or 'failure' to indicate whether you successfully completed the task.",
 			string(standardPrompt), m.CurrentTicket+1)
-		
+
 		cmdParts := strings.Fields(m.CustomAgentCommand)
 		if len(cmdParts) == 0 {
 			return tickMsg{output: "", err: fmt.Errorf("invalid command")}
 		}
-		
+
 		// Append prompt as a command-line argument
 		args := append(cmdParts[1:], prompt)
 		cmd := exec.Command(cmdParts[0], args...)
-		
+
 		// Start the command asynchronously
 		if err := cmd.Start(); err != nil {
 			return tickMsg{output: "", err: err}
 		}
-		
+
 		// Return a message indicating the process has started
 		return processStartedMsg{cmd: cmd}
 	}
@@ -508,12 +508,12 @@ func formatDuration(d time.Duration) string {
 	hours := int(d.Hours())
 	minutes := int(d.Minutes()) % 60
 	seconds := int(d.Seconds()) % 60
-	
+
 	if hours > 0 {
-		return fmt.Sprintf("%d hour%s, %d minute%s, %d second%s", 
+		return fmt.Sprintf("%d hour%s, %d minute%s, %d second%s",
 			hours, plural(hours), minutes, plural(minutes), seconds, plural(seconds))
 	} else if minutes > 0 {
-		return fmt.Sprintf("%d minute%s, %d second%s", 
+		return fmt.Sprintf("%d minute%s, %d second%s",
 			minutes, plural(minutes), seconds, plural(seconds))
 	} else {
 		return fmt.Sprintf("%d second%s", seconds, plural(seconds))
@@ -530,46 +530,46 @@ func plural(n int) string {
 // View renders the current state of the model as a string for display
 func (m Model) View() string {
 	s := titleStyle.Render("Project Manager") + "\n\n"
-	
+
 	switch m.State {
 	case StateFileCheck:
 		s += "Checking for required files...\n"
-		
+
 	case StateFileCheckResults:
 		s += "Checking for required files...\n\n"
 		s += successStyle.Render("✅ Successfully found specification.md") + "\n"
 		s += successStyle.Render("✅ Successfully found tickets.md") + "\n"
 		s += successStyle.Render("✅ Successfully found standard-prompt.md") + "\n\n"
 		s += infoStyle.Render("All files found! Press any key to continue...")
-		
+
 	case StateFilePicker:
 		s += fmt.Sprintf("Missing file: %s\n", errorStyle.Render(m.MissingFiles[m.CurrentMissingIndex]))
 		s += "Please select the file location:\n\n"
 		s += m.FilePicker.View()
-		
+
 	case StateAgentSelection:
 		s += "Select coding agent:\n\n"
-		
+
 		choices := []string{
 			"claude --dangerously-skip-permissions",
 			"Other (enter custom command)",
 		}
-		
+
 		for i, choice := range choices {
 			if i == m.SelectedAgent {
-				s += selectedStyle.Render("→ " + choice) + "\n"
+				s += selectedStyle.Render("→ "+choice) + "\n"
 			} else {
 				s += "  " + choice + "\n"
 			}
 		}
-		
+
 		s += "\n" + infoStyle.Render("Press Enter to continue")
-		
+
 	case StateCustomCommandEntry:
 		s += "Enter custom agent command:\n\n"
 		s += m.TextInput.View() + "\n\n"
 		s += infoStyle.Render("Press Enter when done")
-		
+
 	case StateConfirmation:
 		s += "Ready to start execution:\n\n"
 		s += fmt.Sprintf("📁 Specification: %s\n", m.SpecificationPath)
@@ -577,17 +577,17 @@ func (m Model) View() string {
 		s += fmt.Sprintf("📝 Prompt: %s\n", m.StandardPromptPath)
 		s += fmt.Sprintf("🤖 Agent: %s\n", m.CustomAgentCommand)
 		s += fmt.Sprintf("⏱️  Delay between agents: %d seconds\n", m.DelaySeconds)
-		
+
 		s += "\n" + successStyle.Render("Press Enter to start")
-		
+
 	case StateRunning:
 		s += fmt.Sprintf("Executing agents... (Ticket %d/%d)\n\n", m.CurrentTicket+1, len(m.Tickets))
-		
+
 		// Show ticket status with emojis
 		for i, ticket := range m.Tickets {
 			var status string
 			var timeInfo string
-			
+
 			if i < m.CurrentTicket {
 				// Completed tickets - show duration
 				if ticket.Failed {
@@ -607,7 +607,7 @@ func (m Model) View() string {
 						timeInfo = fmt.Sprintf(" - %s", formatDuration(currentDuration))
 					}
 				} else if m.IsWaiting {
-					remainingTime := int(m.WaitingUntil.Sub(time.Now()).Seconds())
+					remainingTime := int(time.Until(m.WaitingUntil).Seconds())
 					if remainingTime < 0 {
 						remainingTime = 0
 					}
@@ -618,26 +618,26 @@ func (m Model) View() string {
 			} else {
 				status = "⏳"
 			}
-			
+
 			s += fmt.Sprintf("%s Ticket %d: %s%s\n", status, ticket.Number, ticket.Description, timeInfo)
 		}
-		
+
 		if m.ProcessError != nil {
 			s += "\n" + errorStyle.Render(fmt.Sprintf("Error: %v", m.ProcessError)) + "\n"
 		}
-		
+
 	case StateCompleted:
 		s += successStyle.Render("All agents completed!") + "\n\n"
-		
+
 		// Show detailed ticket results with timing
 		var totalDuration time.Duration
 		successful := 0
 		failed := 0
-		
+
 		for _, ticket := range m.Tickets {
 			duration := ticket.EndTime.Sub(ticket.StartTime)
 			totalDuration += duration
-			
+
 			status := "✅"
 			if ticket.Failed {
 				status = "❌"
@@ -645,21 +645,21 @@ func (m Model) View() string {
 			} else {
 				successful++
 			}
-			
-			s += fmt.Sprintf("%s Ticket %d: %s - %s\n", 
+
+			s += fmt.Sprintf("%s Ticket %d: %s - %s\n",
 				status, ticket.Number, ticket.Description, formatDuration(duration))
 		}
-		
+
 		// Show summary
-		s += fmt.Sprintf("\nSummary:\n")
+		s += "\nSummary:\n"
 		s += fmt.Sprintf("✅ Successful: %d\n", successful)
 		s += fmt.Sprintf("❌ Failed: %d\n", failed)
 		s += fmt.Sprintf("📊 Total: %d\n", len(m.Tickets))
 		s += fmt.Sprintf("⏱️  Total time: %s\n", formatDuration(totalDuration))
-		
+
 		s += "\n" + infoStyle.Render("Press q to quit")
 	}
-	
+
 	return s
 }
 
@@ -670,3 +670,4 @@ func main() {
 		os.Exit(1)
 	}
 }
+

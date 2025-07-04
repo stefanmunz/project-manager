@@ -651,6 +651,13 @@ func (m Model) getTicketStatus(index int, ticket Ticket) (status, timeInfo strin
 				currentDuration := time.Since(ticket.StartTime)
 				timeInfo = fmt.Sprintf(" - %s", formatDuration(currentDuration))
 			}
+		} else if m.ProcessError != nil {
+			status = "❌"
+			// For failed current ticket, show duration if we have end time
+			if !ticket.EndTime.IsZero() {
+				duration := ticket.EndTime.Sub(ticket.StartTime)
+				timeInfo = fmt.Sprintf(" - %s", formatDuration(duration))
+			}
 		} else if m.IsWaiting {
 			remainingTime := int(time.Until(m.WaitingUntil).Seconds())
 			if remainingTime < 0 {

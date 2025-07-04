@@ -1,9 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -293,5 +296,109 @@ func TestExponentialBackoff(t *testing.T) {
 
 	if m.DelaySeconds != 30 {
 		t.Errorf("Delay should be capped at 30 seconds, got %d", m.DelaySeconds)
+	}
+}
+
+func TestGetTicketStatusWithError(t *testing.T) {
+	m := initialModel()
+	
+	// Set up tickets
+	m.Tickets = []Ticket{
+		{Number: 1, Description: "First", Completed: true, StartTime: time.Now().Add(-10 * time.Minute), EndTime: time.Now().Add(-8 * time.Minute)},
+		{Number: 2, Description: "Second", StartTime: time.Now().Add(-5 * time.Minute), EndTime: time.Now().Add(-3 * time.Minute)},
+		{Number: 3, Description: "Third"},
+	}
+	
+	// Test cases for different scenarios
+	tests := []struct {
+		name           string
+		ticketIndex    int
+		currentTicket  int
+		processRunning bool
+		processError   error
+		isWaiting      bool
+		expectedStatus string
+		expectTimeInfo bool
+	}{
+		{
+			name:           "Previous completed ticket",
+			ticketIndex:    0,
+			currentTicket:  1,
+			expectedStatus: "✅",
+			expectTimeInfo: true,
+		},
+		{
+			name:           "Previous failed ticket",
+			ticketIndex:    0,
+			currentTicket:  1,
+			expectedStatus: "❌",
+			expectTimeInfo: true,
+		},
+		{
+			name:           "Current running ticket",
+			ticketIndex:    1,
+			currentTicket:  1,
+			processRunning: true,
+			expectedStatus: "🔄",
+			expectTimeInfo: true,
+		},
+		{
+			name:           "Current ticket with error",
+			ticketIndex:    1,
+			currentTicket:  1,
+			processError:   fmt.Errorf("agent failed"),
+			expectedStatus: "❌",
+			expectTimeInfo: true,
+		},
+		{
+			name:           "Current waiting ticket",
+			ticketIndex:    1,
+			currentTicket:  1,
+			isWaiting:      true,
+			expectedStatus: "⏳",
+			expectTimeInfo: false,
+		},
+		{
+			name:           "Future ticket",
+			ticketIndex:    2,
+			currentTicket:  1,
+			expectedStatus: "⏳",
+			expectTimeInfo: false,
+		},
+	}
+	
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Set up model state
+			m.CurrentTicket = tt.currentTicket
+			m.ProcessRunning = tt.processRunning
+			m.ProcessError = tt.processError
+			m.IsWaiting = tt.isWaiting
+			
+			if tt.isWaiting {
+				m.WaitingUntil = time.Now().Add(5 * time.Second)
+			}
+			
+			// Mark first ticket as failed if needed for test
+			if tt.name == "Previous failed ticket" {
+				m.Tickets[0].Failed = true
+				m.Tickets[0].Completed = false
+			}
+			
+			// Get status
+			status, timeInfo := m.getTicketStatus(tt.ticketIndex, m.Tickets[tt.ticketIndex])
+			
+			// Check status
+			if !strings.Contains(status, strings.TrimSuffix(tt.expectedStatus, " ")) {
+				t.Errorf("Expected status to contain %q, got %q", tt.expectedStatus, status)
+			}
+			
+			// Check time info
+			if tt.expectTimeInfo && timeInfo == "" {
+				t.Error("Expected time info, but got empty string")
+			} else if !tt.expectTimeInfo && timeInfo != "" {
+				t.Errorf("Expected no time info, but got %q", timeInfo)
+			}
+		})
 	}
 }

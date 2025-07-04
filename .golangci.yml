@@ -48,6 +48,13 @@ issues:
     - linters:
         - gocritic
       text: "appendAssign: append result not assigned to the same slice"
+    # Ignore style preferences for if-else chains and single case switches
+    - linters:
+        - gocritic
+      text: "ifElseChain: rewrite if-else to switch statement"
+    - linters:
+        - gocritic
+      text: "singleCaseSwitch: should rewrite switch statement to if statement"
     # Allow subprocess with user input (needed for agent execution)
     - linters:
         - gosec

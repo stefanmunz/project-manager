@@ -4,7 +4,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/stefan/project-manager)](https://goreportcard.com/report/github.com/stefan/project-manager)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A beautiful terminal user interface (TUI) application for managing sequential execution of coding agents, built with [Bubble Tea](https://github.com/charmbracelet/bubbletea). This tool streamlines the process of running multiple AI agents against a codebase, with automatic file detection, visual progress tracking, and intelligent error handling.
+This is project-manager, a small terminal user interface (TUI) application for managing sequential execution of coding agents, built with [Bubble Tea](https://github.com/charmbracelet/bubbletea). This tool streamlines the process of running multiple AI agents against a codebase, with automatic file detection, visual progress tracking, and intelligent error handling.
 
 ## Key Features
 
@@ -28,12 +28,14 @@ go install github.com/stefan/project-manager@latest
 ### Building from Source
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/stefan/project-manager.git
 cd project-manager
 ```
 
 2. Install dependencies and build:
+
 ```bash
 go mod download
 go build -o project-manager
@@ -47,6 +49,7 @@ go build -o project-manager
 ## Quick Start
 
 1. Run the application:
+
 ```bash
 project-manager
 ```
@@ -57,6 +60,8 @@ project-manager
    - Choosing your preferred coding agent
    - Confirming before execution
    - Monitoring real-time progress
+
+There is a small example in the input folder that makes three agents contribute to a party script. If you have Claude installed (and you are YOLO enough to run it with --dangerously-skip-permissions), you can just check out the repository, build the tool and run it with the defaults. You can then watch the party script file and see how it is enhanced by each agent.
 
 ## Usage
 
@@ -93,12 +98,15 @@ See the `input/` directory for example files demonstrating the expected format.
 For testing without relying on AI agents, you can use a simple shell script as the "agent". When prompted to select an agent, choose "Other" and enter one of these commands:
 
 ### Option 1: Simple echo command
+
 ```bash
 bash -c 'echo "echo \"Agent worked on ticket\"" >> example-output.sh'
 ```
 
 ### Option 2: Create a test script
+
 First create a mock agent script:
+
 ```bash
 cat > mock-agent.sh << 'EOF'
 #!/bin/bash
@@ -112,6 +120,7 @@ chmod +x mock-agent.sh
 Then use `./mock-agent.sh` as your custom agent command.
 
 ### Option 3: Use a simple sleep command for testing flow
+
 ```bash
 bash -c 'sleep 1 && echo "Task completed"'
 ```
@@ -136,11 +145,13 @@ Use the included timestamp agent to verify sequential execution:
 ```
 
 This script:
+
 - Logs timestamps to `agent-execution.log`
 - Shows exact start/end times for each agent
 - Helps verify agents aren't running concurrently
 
 Check the log after running:
+
 ```bash
 cat agent-execution.log
 ```
@@ -156,12 +167,14 @@ The project includes a comprehensive test suite in the `test-scripts/` directory
 - **Kill File Testing**: Verify the agent termination mechanism
 
 Available test agents:
+
 1. **Debug Agent** (`test-scripts/debug-agent.sh`): Shows exactly what arguments are received
 2. **Stdin Test** (`test-scripts/stdin-test.sh`): Tests reading prompt from stdin
 3. **Failing Agent** (`test-scripts/failing-agent.sh`): Simulates API errors
 4. **Mock Agent** (`test-scripts/mock-agent.sh`): Full-featured mock agent with kill file support
 
 Run tests with:
+
 ```bash
 ./test-scripts/test-kill-mechanism.sh
 ./test-scripts/test-party-flow.sh
@@ -177,6 +190,7 @@ Use the failing agent to test error handling and exponential backoff:
 ```
 
 This script simulates API overload errors. You should see:
+
 - Failed tickets marked with ❌
 - Delay increases after each failure (2s → 4s → 8s → 16s → 30s max)
 - All tickets are attempted despite failures
@@ -191,7 +205,7 @@ The project manager handles non-terminating agents (like Claude) using a "kill f
 3. **Auto-termination**: When `killmenow.md` is detected, the agent process is killed and the file is deleted
 4. **Status tracking**: Tickets are marked as completed/failed based on the file content
 
-This ensures agents that don't auto-exit can still be managed effectively.
+This ensures agents like Claude Code that don't auto-exit can still be managed effectively.
 
 ## Architecture & Design
 
@@ -202,6 +216,7 @@ The application is built using:
 - **[Bubbles](https://github.com/charmbracelet/bubbles)**: Pre-built TUI components
 
 Key design decisions:
+
 - Single-file architecture for simplicity
 - Asynchronous agent execution with kill file mechanism
 - Exponential backoff for API error handling
@@ -210,6 +225,7 @@ Key design decisions:
 ## Contributing
 
 We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on:
+
 - Code style and standards
 - Testing requirements
 - Pull request process

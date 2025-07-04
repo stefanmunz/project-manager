@@ -8,6 +8,7 @@ This is project-manager, a small terminal user interface (TUI) application for m
 
 ## Key Features
 
+- Flexible input folder selection (default or custom location)
 - Automatic detection of specification files
 - Interactive file picker for missing files
 - Agent selection (claude or custom command)
@@ -69,20 +70,25 @@ There is a small example in the input folder that makes three agents contribute 
 
 ### Workflow
 
-1. **File Detection**: Automatically checks for required files in the `input/` directory
-2. **Interactive Selection**: If files are missing, presents an intuitive file picker
-3. **Agent Configuration**: Choose between Claude or a custom command
-4. **Confirmation**: Review your configuration before execution
-5. **Sequential Execution**: Runs agents one by one with configurable delays
-6. **Progress Tracking**: Real-time status updates with visual indicators
+1. **Folder Selection**: Choose between the default `input/` folder or browse for a custom location
+2. **File Detection**: Automatically checks for required files in the selected folder
+3. **Interactive Selection**: If files are missing, presents an intuitive file picker
+4. **Agent Configuration**: Choose between Claude or a custom command
+5. **Confirmation**: Review your configuration before execution
+6. **Sequential Execution**: Runs agents one by one with configurable delays
+7. **Progress Tracking**: Real-time status updates with visual indicators
 
 ## File Structure
 
 The application expects three input files:
 
-- `input/specification.md` - Overall project specification and context
-- `input/tickets.md` - Individual tasks/tickets for agents to process
-- `input/standard-prompt.md` - Base prompt template used for all agents
+- `specification.md` - Overall project specification and context
+- `tickets.md` - Individual tasks/tickets for agents to process
+- `standard-prompt.md` - Base prompt template used for all agents
+
+These files can be located in:
+- The default `input/` directory (for quick start)
+- Any custom folder you select when the application starts
 
 ### Example Input Structure
 

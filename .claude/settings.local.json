@@ -10,7 +10,8 @@
       "Bash(go build:*)",
       "Bash(grep:*)",
       "Bash(awk:*)",
-      "Bash(go test:*)"
+      "Bash(go test:*)",
+      "Bash(go doc:*)"
     ],
     "deny": []
   }

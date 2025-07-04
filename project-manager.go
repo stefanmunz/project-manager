@@ -65,7 +65,8 @@ type proceedToAgentSelectionMsg struct{}
 type AppState int
 
 const (
-	StateFileCheck AppState = iota
+	StateFolderSelection AppState = iota
+	StateFileCheck
 	StateFileCheckResults
 	StateFilePicker
 	StateAgentSelection
@@ -81,12 +82,16 @@ type Model struct {
 	Width  int
 	Height int
 
-	// File paths
+	// Folder and file paths
+	InputFolder         string
 	SpecificationPath   string
 	TicketsPath         string
 	StandardPromptPath  string
 	MissingFiles        []string
 	CurrentMissingIndex int
+	UseDefaultFolder    bool
+	FolderOptions       []string
+	SelectedFolderOption int
 
 	// Components
 	FilePicker filepicker.Model
@@ -127,48 +132,56 @@ func initialModel() Model {
 	ti.CharLimit = 200
 
 	return Model{
-		State:              StateFileCheck,
-		SpecificationPath:  "input/specification.md",
-		TicketsPath:        "input/tickets.md",
-		StandardPromptPath: "input/standard-prompt.md",
-		MissingFiles:       []string{},
-		TextInput:          ti,
-		SelectedAgent:      0,
-		Tickets:            []Ticket{},
-		DelaySeconds:       2, // Default 2 second delay between agents
+		State:                StateFolderSelection,
+		InputFolder:          "input",
+		SpecificationPath:    "specification.md",
+		TicketsPath:          "tickets.md",
+		StandardPromptPath:   "standard-prompt.md",
+		MissingFiles:         []string{},
+		TextInput:            ti,
+		SelectedAgent:        0,
+		Tickets:              []Ticket{},
+		DelaySeconds:         2, // Default 2 second delay between agents
+		FolderOptions:        []string{"Use default 'input' folder", "Browse for folder"},
+		SelectedFolderOption: 0,
 	}
 }
 
-// Init initializes the model and returns the initial command to check files
+// Init initializes the model and returns the initial command
 func (m Model) Init() tea.Cmd {
-	return checkFiles
+	return nil
 }
 
-func checkFiles() tea.Msg {
-	m := initialModel()
-	result := fileCheckResult{
-		MissingFiles: []string{},
-	}
+func checkFiles(inputFolder string) tea.Cmd {
+	return func() tea.Msg {
+		result := fileCheckResult{
+			MissingFiles: []string{},
+		}
 
-	if _, err := os.Stat(m.SpecificationPath); os.IsNotExist(err) {
-		result.MissingFiles = append(result.MissingFiles, "specification.md")
-	} else {
-		result.SpecificationFound = true
-	}
+		specPath := fmt.Sprintf("%s/specification.md", inputFolder)
+		ticketsPath := fmt.Sprintf("%s/tickets.md", inputFolder)
+		promptPath := fmt.Sprintf("%s/standard-prompt.md", inputFolder)
 
-	if _, err := os.Stat(m.TicketsPath); os.IsNotExist(err) {
-		result.MissingFiles = append(result.MissingFiles, "tickets.md")
-	} else {
-		result.TicketsFound = true
-	}
+		if _, err := os.Stat(specPath); os.IsNotExist(err) {
+			result.MissingFiles = append(result.MissingFiles, "specification.md")
+		} else {
+			result.SpecificationFound = true
+		}
 
-	if _, err := os.Stat(m.StandardPromptPath); os.IsNotExist(err) {
-		result.MissingFiles = append(result.MissingFiles, "standard-prompt.md")
-	} else {
-		result.StandardPromptFound = true
-	}
+		if _, err := os.Stat(ticketsPath); os.IsNotExist(err) {
+			result.MissingFiles = append(result.MissingFiles, "tickets.md")
+		} else {
+			result.TicketsFound = true
+		}
 
-	return result
+		if _, err := os.Stat(promptPath); os.IsNotExist(err) {
+			result.MissingFiles = append(result.MissingFiles, "standard-prompt.md")
+		} else {
+			result.StandardPromptFound = true
+		}
+
+		return result
+	}
 }
 
 // Update handles incoming messages and updates the model state accordingly
@@ -185,15 +198,41 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "up", "k":
 			if m.State == StateAgentSelection {
 				m.SelectedAgent = (m.SelectedAgent - 1 + 2) % 2
+			} else if m.State == StateFolderSelection {
+				m.SelectedFolderOption = (m.SelectedFolderOption - 1 + 2) % 2
 			}
 
 		case "down", "j":
 			if m.State == StateAgentSelection {
 				m.SelectedAgent = (m.SelectedAgent + 1) % 2
+			} else if m.State == StateFolderSelection {
+				m.SelectedFolderOption = (m.SelectedFolderOption + 1) % 2
 			}
 
 		case "enter":
 			switch m.State {
+			case StateFolderSelection:
+				if m.SelectedFolderOption == 0 {
+					// Use default folder
+					m.InputFolder = "input"
+					m.SpecificationPath = fmt.Sprintf("%s/specification.md", m.InputFolder)
+					m.TicketsPath = fmt.Sprintf("%s/tickets.md", m.InputFolder)
+					m.StandardPromptPath = fmt.Sprintf("%s/standard-prompt.md", m.InputFolder)
+					m.State = StateFileCheck
+					return m, checkFiles(m.InputFolder)
+				} else {
+					// Browse for folder
+					fp := filepicker.New()
+					fp.CurrentDirectory, _ = os.Getwd()
+					fp.ShowHidden = false
+					fp.DirAllowed = true
+					fp.FileAllowed = false
+					m.FilePicker = fp
+					m.State = StateFilePicker
+					m.CurrentMissingIndex = -1 // Special value to indicate folder selection
+					return m, m.FilePicker.Init()
+				}
+			
 			case StateAgentSelection:
 				if m.SelectedAgent == 0 {
 					m.CustomAgentCommand = "claude --dangerously-skip-permissions"
@@ -235,24 +274,40 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			var cmd tea.Cmd
 			m.FilePicker, cmd = m.FilePicker.Update(msg)
 
-			if didSelect, path := m.FilePicker.DidSelectFile(msg); didSelect {
-				switch m.MissingFiles[m.CurrentMissingIndex] {
-				case "specification.md":
-					m.SpecificationPath = path
-				case "tickets.md":
-					m.TicketsPath = path
-				case "standard-prompt.md":
-					m.StandardPromptPath = path
+			// Check if we're selecting a folder (CurrentMissingIndex == -1)
+			if m.CurrentMissingIndex == -1 {
+				if didSelect, path := m.FilePicker.DidSelectFile(msg); didSelect {
+					// For directory selection, we expect a directory to be selected
+					if info, err := os.Stat(path); err == nil && info.IsDir() {
+						m.InputFolder = path
+						m.SpecificationPath = fmt.Sprintf("%s/specification.md", m.InputFolder)
+						m.TicketsPath = fmt.Sprintf("%s/tickets.md", m.InputFolder)
+						m.StandardPromptPath = fmt.Sprintf("%s/standard-prompt.md", m.InputFolder)
+						m.State = StateFileCheck
+						return m, checkFiles(m.InputFolder)
+					}
 				}
+			} else {
+				// Regular file selection for missing files
+				if didSelect, path := m.FilePicker.DidSelectFile(msg); didSelect {
+					switch m.MissingFiles[m.CurrentMissingIndex] {
+					case "specification.md":
+						m.SpecificationPath = path
+					case "tickets.md":
+						m.TicketsPath = path
+					case "standard-prompt.md":
+						m.StandardPromptPath = path
+					}
 
-				m.CurrentMissingIndex++
-				if m.CurrentMissingIndex >= len(m.MissingFiles) {
-					m.State = StateAgentSelection
-				} else {
-					fp := filepicker.New()
-					fp.CurrentDirectory, _ = os.Getwd()
-					m.FilePicker = fp
-					return m, m.FilePicker.Init()
+					m.CurrentMissingIndex++
+					if m.CurrentMissingIndex >= len(m.MissingFiles) {
+						m.State = StateAgentSelection
+					} else {
+						fp := filepicker.New()
+						fp.CurrentDirectory, _ = os.Getwd()
+						m.FilePicker = fp
+						return m, m.FilePicker.Init()
+					}
 				}
 			}
 			return m, cmd
@@ -625,12 +680,27 @@ func (m Model) View() string {
 	return s
 }
 
+func (m Model) renderFolderSelection() string {
+	s := "Select input folder location:\n\n"
+
+	for i, option := range m.FolderOptions {
+		if i == m.SelectedFolderOption {
+			s += selectedStyle.Render("→ "+option) + "\n"
+		} else {
+			s += "  " + option + "\n"
+		}
+	}
+
+	s += "\n" + infoStyle.Render("Use ↑/↓ to navigate, Enter to select")
+	return s
+}
+
 func (m Model) renderFileCheck() string {
-	return "Checking for required files...\n"
+	return fmt.Sprintf("Checking for required files in '%s' folder...\n", m.InputFolder)
 }
 
 func (m Model) renderFileCheckResults() string {
-	s := "Checking for required files...\n\n"
+	s := fmt.Sprintf("Checking for required files in '%s' folder...\n\n", m.InputFolder)
 	s += successStyle.Render("✅ Successfully found specification.md") + "\n"
 	s += successStyle.Render("✅ Successfully found tickets.md") + "\n"
 	s += successStyle.Render("✅ Successfully found standard-prompt.md") + "\n\n"
@@ -639,8 +709,16 @@ func (m Model) renderFileCheckResults() string {
 }
 
 func (m Model) renderFilePicker() string {
-	s := fmt.Sprintf("Missing file: %s\n", errorStyle.Render(m.MissingFiles[m.CurrentMissingIndex]))
-	s += "Please select the file location:\n\n"
+	var s string
+	if m.CurrentMissingIndex == -1 {
+		// Folder selection mode
+		s = "Select the folder containing your input files:\n\n"
+		s += infoStyle.Render("Navigate to a folder and press Enter to select it") + "\n\n"
+	} else {
+		// File selection mode
+		s = fmt.Sprintf("Missing file: %s\n", errorStyle.Render(m.MissingFiles[m.CurrentMissingIndex]))
+		s += "Please select the file location:\n\n"
+	}
 	s += m.FilePicker.View()
 	return s
 }
@@ -674,6 +752,7 @@ func (m Model) renderCustomCommandEntry() string {
 
 func (m Model) renderConfirmation() string {
 	s := "Ready to start execution:\n\n"
+	s += fmt.Sprintf("📂 Input folder: %s\n", m.InputFolder)
 	s += fmt.Sprintf("📁 Specification: %s\n", m.SpecificationPath)
 	s += fmt.Sprintf("📋 Tickets: %s (%d tickets)\n", m.TicketsPath, len(m.Tickets))
 	s += fmt.Sprintf("📝 Prompt: %s\n", m.StandardPromptPath)

@@ -14,8 +14,8 @@ import (
 func TestInitialModel(t *testing.T) {
 	m := initialModel()
 
-	if m.State != StateFileCheck {
-		t.Errorf("Initial state should be StateFileCheck, got %v", m.State)
+	if m.State != StateFolderSelection {
+		t.Errorf("Initial state should be StateFolderSelection, got %v", m.State)
 	}
 
 	if m.DelaySeconds != 2 {
@@ -24,6 +24,14 @@ func TestInitialModel(t *testing.T) {
 
 	if m.SelectedAgent != 0 {
 		t.Errorf("Default agent should be 0 (claude), got %d", m.SelectedAgent)
+	}
+	
+	if m.InputFolder != "input" {
+		t.Errorf("Default input folder should be 'input', got %s", m.InputFolder)
+	}
+	
+	if len(m.FolderOptions) != 2 {
+		t.Errorf("Should have 2 folder options, got %d", len(m.FolderOptions))
 	}
 }
 
@@ -64,7 +72,8 @@ func setupTestDirectory(t *testing.T) (string, string) {
 }
 
 func testMissingFiles(t *testing.T) {
-	msg := checkFiles()
+	cmd := checkFiles("input")
+	msg := cmd()
 	result, ok := msg.(fileCheckResult)
 	if !ok {
 		t.Fatal("checkFiles should return fileCheckResult")
@@ -90,7 +99,8 @@ func createTestFiles(t *testing.T, inputDir string) {
 }
 
 func testFoundFiles(t *testing.T) {
-	msg := checkFiles()
+	cmd := checkFiles("input")
+	msg := cmd()
 	result, ok := msg.(fileCheckResult)
 	if !ok {
 		t.Fatal("checkFiles should return fileCheckResult")

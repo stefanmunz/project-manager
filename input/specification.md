@@ -4,7 +4,11 @@ Create a fun shell script that simulates a virtual party where each agent arrive
 
 ## Requirements
 
-1. The script should be named `party.sh` (a simple, consistent name for all agents to use)
+1. The script should be named `<day>-<time>-party.sh` where:
+   - `<day>` is the full day of the week in lowercase (e.g., monday, tuesday, wednesday, thursday, friday, saturday, sunday)
+   - `<time>` is the current time in 24-hour format with hyphens instead of colons (e.g., 14-30, 09-15, 23-45)
+   - Example: `monday-14-30-party.sh` or `friday-09-15-party.sh`
+   - Note: Use hyphens in the time to avoid filesystem issues with colons
 2. Each agent should append their party contribution to the existing file
 3. The script should be executable
 4. Each agent's arrival should be unique and entertaining

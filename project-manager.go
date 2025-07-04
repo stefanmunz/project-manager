@@ -62,6 +62,7 @@ type fileCheckResult struct {
 
 type proceedToAgentSelectionMsg struct{}
 
+// AppState represents the current state of the application
 type AppState int
 
 const (
@@ -75,6 +76,7 @@ const (
 	StateCompleted
 )
 
+// Model represents the application's state and implements the tea.Model interface
 type Model struct {
 	State           AppState
 	Width           int
@@ -110,6 +112,7 @@ type Model struct {
 	ConfirmReady  bool
 }
 
+// Ticket represents a single task to be executed by an agent
 type Ticket struct {
 	Number      int
 	Description string
@@ -137,6 +140,7 @@ func initialModel() Model {
 	}
 }
 
+// Init initializes the model and returns the initial command to check files
 func (m Model) Init() tea.Cmd {
 	return checkFiles
 }
@@ -168,6 +172,7 @@ func checkFiles() tea.Msg {
 	return result
 }
 
+// Update handles incoming messages and updates the model state accordingly
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -522,6 +527,7 @@ func plural(n int) string {
 	return "s"
 }
 
+// View renders the current state of the model as a string for display
 func (m Model) View() string {
 	s := titleStyle.Render("Project Manager") + "\n\n"
 	

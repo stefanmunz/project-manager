@@ -1,4 +1,4 @@
-module project-manager
+module github.com/stefan/project-manager
 
 go 1.21
 

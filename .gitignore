@@ -23,3 +23,20 @@ debug-agent.log
 *.dll
 *.so
 *.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+cover.html
+cover.out
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+
+# Go module download cache
+go.sum.backup

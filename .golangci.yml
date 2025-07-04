@@ -1,0 +1,39 @@
+linters:
+  enable:
+    - gofmt
+    - golint
+    - govet
+    - ineffassign
+    - misspell
+    - unconvert
+    - gocritic
+    - goimports
+    - gosec
+    - gosimple
+    - staticcheck
+    - unused
+    - errcheck
+
+linters-settings:
+  gofmt:
+    simplify: true
+  govet:
+    check-shadowing: true
+  golint:
+    min-confidence: 0.8
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  
+run:
+  timeout: 5m
+  tests: false

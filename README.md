@@ -1,8 +1,12 @@
 # Project Manager TUI
 
-A terminal user interface for managing sequential coding agent execution using Bubble Tea.
+[![CI](https://github.com/stefan/project-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/stefan/project-manager/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/stefan/project-manager)](https://goreportcard.com/report/github.com/stefan/project-manager)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Features
+A beautiful terminal user interface (TUI) application for managing sequential execution of coding agents, built with [Bubble Tea](https://github.com/charmbracelet/bubbletea). This tool streamlines the process of running multiple AI agents against a codebase, with automatic file detection, visual progress tracking, and intelligent error handling.
+
+## Key Features
 
 - Automatic detection of specification files
 - Interactive file picker for missing files
@@ -15,31 +19,67 @@ A terminal user interface for managing sequential coding agent execution using B
 
 ## Installation
 
-1. Install Go (1.21 or later)
-2. Install dependencies:
+### Using Go Install (Recommended)
+
+```bash
+go install github.com/stefan/project-manager@latest
+```
+
+### Building from Source
+
+1. Clone the repository:
+```bash
+git clone https://github.com/stefan/project-manager.git
+cd project-manager
+```
+
+2. Install dependencies and build:
 ```bash
 go mod download
+go build -o project-manager
 ```
+
+### Requirements
+
+- Go 1.21 or later
+- Terminal with UTF-8 support
+
+## Quick Start
+
+1. Run the application:
+```bash
+project-manager
+```
+
+2. The TUI will guide you through:
+   - Checking for required input files
+   - Selecting missing files via an interactive file picker
+   - Choosing your preferred coding agent
+   - Confirming before execution
+   - Monitoring real-time progress
 
 ## Usage
 
-Run the application:
-```bash
-go run .
-```
+### Workflow
 
-The application will:
-1. Check for required files in the `input/` folder
-2. If files are missing, let you select them using a file picker
-3. Ask you to choose the coding agent
-4. Show a confirmation screen
-5. Execute agents sequentially for each ticket
+1. **File Detection**: Automatically checks for required files in the `input/` directory
+2. **Interactive Selection**: If files are missing, presents an intuitive file picker
+3. **Agent Configuration**: Choose between Claude or a custom command
+4. **Confirmation**: Review your configuration before execution
+5. **Sequential Execution**: Runs agents one by one with configurable delays
+6. **Progress Tracking**: Real-time status updates with visual indicators
 
 ## File Structure
 
-- `input/specification.md` - Project specification
-- `input/tickets.md` - Individual tickets for agents
-- `input/standard-prompt.md` - Base prompt for all agents
+The application expects three input files:
+
+- `input/specification.md` - Overall project specification and context
+- `input/tickets.md` - Individual tasks/tickets for agents to process
+- `input/standard-prompt.md` - Base prompt template used for all agents
+
+### Example Input Structure
+
+See the `input/` directory for example files demonstrating the expected format.
 
 ## Controls
 
@@ -152,3 +192,41 @@ The project manager handles non-terminating agents (like Claude) using a "kill f
 4. **Status tracking**: Tickets are marked as completed/failed based on the file content
 
 This ensures agents that don't auto-exit can still be managed effectively.
+
+## Architecture & Design
+
+The application is built using:
+
+- **[Bubble Tea](https://github.com/charmbracelet/bubbletea)**: Terminal UI framework
+- **[Lipgloss](https://github.com/charmbracelet/lipgloss)**: Styling and layout
+- **[Bubbles](https://github.com/charmbracelet/bubbles)**: Pre-built TUI components
+
+Key design decisions:
+- Single-file architecture for simplicity
+- Asynchronous agent execution with kill file mechanism
+- Exponential backoff for API error handling
+- Model-View-Update pattern for UI state management
+
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on:
+- Code style and standards
+- Testing requirements
+- Pull request process
+- Development setup
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- Built with [Charm](https://charm.sh/) libraries
+- Inspired by the need for better AI agent orchestration
+- Thanks to all contributors and users
+
+## Support
+
+- **Issues**: [GitHub Issues](https://github.com/stefan/project-manager/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/stefan/project-manager/discussions)
+- **Documentation**: [Wiki](https://github.com/stefan/project-manager/wiki)

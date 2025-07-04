@@ -269,7 +269,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			   strings.Contains(msg.output, "rate limit") ||
 			   strings.Contains(msg.output, "too many requests") {
 				// Exponential backoff: double the delay, max 30 seconds
-				m.DelaySeconds = m.DelaySeconds * 2
+				m.DelaySeconds *= 2
 				if m.DelaySeconds > 30 {
 					m.DelaySeconds = 30
 				}
@@ -315,7 +315,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		
 		// Delete the kill file
-		os.Remove("killmenow.md")
+		_ = os.Remove("killmenow.md")
 		
 		// Determine success or failure
 		if strings.Contains(strings.ToLower(msg.content), "success") {

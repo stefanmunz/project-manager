@@ -179,7 +179,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c", "q":
 			if m.CurrentCmd != nil && m.CurrentCmd.Process != nil {
-				m.CurrentCmd.Process.Kill()
+				_ = m.CurrentCmd.Process.Kill()
 			}
 			return m, tea.Quit
 			

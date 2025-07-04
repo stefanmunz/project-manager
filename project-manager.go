@@ -394,7 +394,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			now.Format("15-04-05"),
 			m.CurrentTicket+1)
 
-		if logFile, err := os.OpenFile(logFileName, os.O_APPEND|os.O_WRONLY, 0600); err == nil {
+		if logFile, err := os.OpenFile(logFileName, os.O_APPEND|os.O_WRONLY, 0o600); err == nil {
 			_, _ = fmt.Fprintf(logFile, "\n--- Agent Completed at %s ---\n", now.Format("15:04:05"))
 			_, _ = fmt.Fprintf(logFile, "Kill file content: %s\n", msg.content)
 			_, _ = fmt.Fprintf(logFile, "Working directory at completion: %s\n", func() string {

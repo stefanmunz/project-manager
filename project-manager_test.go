@@ -58,7 +58,7 @@ func setupTestDirectory(t *testing.T) (string, string) {
 	}
 
 	inputDir := filepath.Join(tmpDir, "input")
-	if err := os.Mkdir(inputDir, 0755); err != nil {
+	if err := os.Mkdir(inputDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
 

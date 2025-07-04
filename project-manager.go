@@ -323,9 +323,30 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if logFile, err := os.OpenFile(logFileName, os.O_APPEND|os.O_WRONLY, 0644); err == nil {
 			fmt.Fprintf(logFile, "\n--- Agent Completed at %s ---\n", now.Format("15:04:05"))
 			fmt.Fprintf(logFile, "Kill file content: %s\n", msg.content)
+			fmt.Fprintf(logFile, "Working directory at completion: %s\n", func() string {
+				if wd, err := os.Getwd(); err == nil {
+					return wd
+				}
+				return "unknown"
+			}())
+			
+			// List all .sh files in current directory
+			if files, err := os.ReadDir("."); err == nil {
+				fmt.Fprintf(logFile, "Shell scripts in current directory:\n")
+				for _, file := range files {
+					if strings.HasSuffix(file.Name(), ".sh") {
+						if info, err := file.Info(); err == nil {
+							fmt.Fprintf(logFile, "  - %s (size: %d, modified: %s)\n", 
+								file.Name(), info.Size(), info.ModTime().Format("15:04:05"))
+						}
+					}
+				}
+			}
+			
 			fmt.Fprintf(logFile, "Party.sh exists: %v\n", fileExists("party.sh"))
 			if content, err := os.ReadFile("party.sh"); err == nil {
 				fmt.Fprintf(logFile, "Party.sh size: %d bytes\n", len(content))
+				fmt.Fprintf(logFile, "Party.sh first 100 chars: %.100s...\n", string(content))
 			}
 			logFile.Close()
 		}

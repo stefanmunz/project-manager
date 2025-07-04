@@ -42,6 +42,14 @@ go mod download
 go build -o project-manager
 ```
 
+3. (Optional) Install development tools for contributing:
+
+```bash
+make install-tools
+```
+
+This installs golangci-lint and other development tools needed for linting and code quality checks.
+
 ### Requirements
 
 - Go 1.21 or later

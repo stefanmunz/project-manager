@@ -8,12 +8,14 @@ This is project-manager, a small terminal user interface (TUI) application for m
 
 ## Key Features
 
-- Flexible input folder selection (default or custom location)
+- Multi-project support with folder-based organization
 - Automatic detection of specification files
 - Interactive file picker for missing files
 - Agent selection (claude or custom command)
 - Sequential ticket execution with configurable delays
 - Real-time progress tracking with status indicators
+- Flexible ticket parsing (supports various markdown formats)
+- Shows ticket count during file validation
 - Exponential backoff for API errors
 - Visual countdown between agent executions
 - Kill file mechanism for non-terminating agents
@@ -35,14 +37,21 @@ git clone https://github.com/stefanmunz/project-manager.git
 cd project-manager
 ```
 
-2. Install dependencies and build:
+2. Install dependencies:
 
 ```bash
 go mod download
-go build -o project-manager
 ```
 
-3. (Optional) Install development tools for contributing:
+3. Build the application:
+
+```bash
+go build -o project-manager project-manager.go
+```
+
+This creates an executable `project-manager` file that you can run directly.
+
+4. (Optional) Install development tools for contributing:
 
 ```bash
 make install-tools
@@ -64,6 +73,7 @@ This installs golangci-lint and other development tools needed for linting and c
 ```
 
 2. The TUI will guide you through:
+   - Selecting a project from available folders
    - Checking for required input files
    - Selecting missing files via an interactive file picker
    - Choosing your preferred coding agent
@@ -78,29 +88,58 @@ There is a small example in the input folder that makes three agents contribute 
 
 ### Workflow
 
-1. **Folder Selection**: Choose between the default `input/` folder or browse for a custom location
-2. **File Detection**: Automatically checks for required files in the selected folder
+1. **Project Selection**: Choose from available project folders in the `input/` directory
+2. **File Detection**: Automatically checks for required files in the selected project
 3. **Interactive Selection**: If files are missing, presents an intuitive file picker
-4. **Agent Configuration**: Choose between Claude or a custom command
-5. **Confirmation**: Review your configuration before execution
-6. **Sequential Execution**: Runs agents one by one with configurable delays
-7. **Progress Tracking**: Real-time status updates with visual indicators
+4. **Ticket Count Display**: Shows the number of tickets found during validation
+5. **Agent Configuration**: Choose between Claude or a custom command
+6. **Confirmation**: Review your configuration before execution
+7. **Sequential Execution**: Runs agents one by one with configurable delays
+8. **Progress Tracking**: Real-time status updates with visual indicators
 
-## File Structure
+## Project Structure
 
-The application expects three input files:
+Projects are organized in folders within the `input/` directory:
 
-- `specification.md` - Overall project specification and context
-- `tickets.md` - Individual tasks/tickets for agents to process
-- `standard-prompt.md` - Base prompt template used for all agents
+```
+input/
+├── initial-implementation/
+│   ├── specification.md
+│   ├── tickets.md
+│   └── standard-prompt.md
+├── feature-x/
+│   ├── specification.md
+│   ├── tickets.md
+│   └── standard-prompt.md
+└── bugfix-y/
+    ├── specification.md
+    ├── tickets.md
+    └── standard-prompt.md
+```
 
-These files can be located in:
-- The default `input/` directory (for quick start)
-- Any custom folder you select when the application starts
+Each project folder must contain:
+- `specification.md` - Project specification
+- `tickets.md` - Individual tickets for agents
+- `standard-prompt.md` - Base prompt for all agents
 
-### Example Input Structure
+## Ticket Format
 
-See the `input/` directory for example files demonstrating the expected format.
+The ticket parser is flexible and supports various markdown formats:
+
+```markdown
+# Ticket 1: Single hash
+## Ticket 2: Double hash
+### ticket 3: Lowercase
+#### TICKET 4: Uppercase
+
+## Ticket #5: With hash symbol
+### Ticket 6 - With dash separator
+# Ticket 7 No separator
+
+## Ticket: Without number (auto-assigned)
+```
+
+All of these formats are recognized. Tickets are automatically numbered if no number is provided, and sorted by ticket number.
 
 ## Controls
 
@@ -222,6 +261,27 @@ The project manager handles non-terminating agents (like Claude) using a "kill f
 4. **Status tracking**: Tickets are marked as completed/failed based on the file content
 
 This ensures agents like Claude Code that don't auto-exit can still be managed effectively.
+
+## Running Tests
+
+The project includes unit tests for the ticket parsing functionality:
+
+```bash
+# Run all tests
+go test -v
+
+# Run tests with coverage
+go test -v -cover
+
+# Run benchmarks
+go test -bench=. -benchtime=10s
+```
+
+The test suite covers:
+- Various ticket formats (different hash levels, case sensitivity, separators)
+- Edge cases (empty files, missing numbers, duplicates)
+- File checking functionality
+- Error handling
 
 ## Architecture & Design
 

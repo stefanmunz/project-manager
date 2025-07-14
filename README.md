@@ -1,5 +1,8 @@
 # Project Manager TUI
 
+
+<img src="./banner.jpg" />
+
 [![CI](https://github.com/stefanmunz/project-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/stefanmunz/project-manager/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/stefanmunz/project-manager)](https://goreportcard.com/report/github.com/stefanmunz/project-manager)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)

@@ -64,8 +64,19 @@ This installs golangci-lint and other development tools needed for linting and c
 
 ### Requirements
 
-- Go 1.21 or later
+- Go 1.21 or later (CI and development use Go 1.23)
 - Terminal with UTF-8 support
+
+### Development Tool Versions
+
+To ensure consistency between local development and CI environments, the following versions are used:
+
+- **Go**: 1.23
+- **golangci-lint**: v1.62.2
+
+These versions are configured in:
+- CI: `.github/workflows/ci.yml`
+- Local: `Makefile` (via `make install-tools`)
 
 ## Quick Start
 

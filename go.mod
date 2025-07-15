@@ -2,8 +2,6 @@ module github.com/stefanmunz/project-manager
 
 go 1.23.0
 
-toolchain go1.24.4
-
 require (
 	github.com/charmbracelet/bubbles v0.18.0
 	github.com/charmbracelet/bubbletea v0.25.0

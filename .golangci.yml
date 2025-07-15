@@ -8,9 +8,7 @@ linters:
     - unconvert
     - gocritic
     - gosec
-    - gosimple
     - staticcheck
-    - unused
     - errcheck
     - revive
   settings:

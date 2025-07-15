@@ -2,13 +2,11 @@ version: "2"
 
 linters:
   enable:
-    - gofmt
     - govet
     - ineffassign
     - misspell
     - unconvert
     - gocritic
-    - goimports
     - gosec
     - gosimple
     - staticcheck
@@ -60,6 +58,9 @@ linters:
         text: "G304: Potential file inclusion via variable"
 
 formatters:
+  enable:
+    - gofmt
+    - goimports
   settings:
     gofmt:
       simplify: true
